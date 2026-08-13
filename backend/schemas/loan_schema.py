@@ -1,0 +1,70 @@
+from pydantic import BaseModel, Field, field_validator
+
+
+class LoanApplication(BaseModel):
+    dependents: int = Field(ge=0, le=3)
+
+    employment_type: str
+
+    annual_income: int = Field(gt=0)
+
+    credit_score: float = Field(ge=300, le=900)
+
+    loan_amount: int = Field(gt=0)
+
+    loan_tenure: int = Field(ge=2, le=30)
+
+    education: str
+
+    @field_validator("employment_type")
+    @classmethod
+    def validate_employment_type(cls, value: str) -> str:
+        allowed_values = {
+            "Private",
+            "Government",
+            "Self-Employed",
+            "Unemployed",
+            "Skilled Labor",
+        }
+
+        if value not in allowed_values:
+            raise ValueError(
+                "employment_type must be one of: "
+                
+                f"{sorted(allowed_values)}"
+            )
+
+        return value
+
+    @field_validator("education")
+    @classmethod
+    def validate_education(cls, value: str) -> str:
+        allowed_values = {
+            "Graduate",
+            "Post Graduate",
+            "PhD",
+            "High School",
+            "Diploma",
+            "No Formal",
+        }
+
+        if value not in allowed_values:
+            raise ValueError(
+                "education must be one of: "
+                f"{sorted(allowed_values)}"
+            )
+
+        return value
+
+
+class PredictionResponse(BaseModel):
+    prediction: str
+    approved_probability: float
+    rejected_probability: float
+    suggestions: list[str]
+
+
+class ValidationResponse(BaseModel):
+    status: str
+    message: str
+    data: LoanApplication
