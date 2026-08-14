@@ -101,3 +101,118 @@ button:focus-visible,input:focus-visible { outline:3px solid rgba(35,113,236,.32
   .credit-score-instruction strong { font-size:14px; }
   .slider-section { margin-top:25px; padding-top:25px; }
 }
+
+/* EMI Calculator & Dashboard Financial Tools */
+.nav-link-btn { padding:0; border:0; background:transparent; color:#59706d; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; transition:color .18s; }
+.nav-link-btn:hover { color:var(--primary); }
+.hero-cta-group { display:flex; align-items:center; gap:12px; margin-top:25px; flex-wrap:wrap; }
+.hero-cta-group .hero-cta { margin-top:0; }
+.hero-secondary-cta { display:inline-flex; align-items:center; gap:8px; min-height:52px; padding:0 20px; border:1.5px solid #c9d8eb; border-radius:12px; color:var(--primary); background:#f4f8fe; font-weight:800; cursor:pointer; transition:all .18s ease; font-family:inherit; }
+.hero-secondary-cta:hover { border-color:var(--primary); background:#e9f2fd; transform:translateY(-2px); box-shadow:0 8px 18px rgba(36,92,171,.12); }
+.hero-secondary-cta span { font-size:17px; font-weight:800; }
+
+.tools-section { margin-top:52px; }
+.tool-banner { display:flex; align-items:center; justify-content:space-between; gap:24px; padding:28px 32px; border:1px solid #cfdceb; border-radius:20px; background:linear-gradient(135deg,#f7faff,#fff); box-shadow:0 8px 24px rgba(29,48,78,.06); margin-top:24px; }
+.tool-banner-content { display:flex; align-items:center; gap:18px; }
+.tool-icon { display:grid; place-items:center; width:48px; height:48px; border-radius:14px; color:var(--primary); background:var(--primary-soft); font-size:24px; font-weight:800; flex-shrink:0; }
+.tool-banner-content h3 { margin:0 0 5px; font-size:18px; color:var(--navy); }
+.tool-banner-content p { margin:0; color:var(--muted); font-size:13.5px; line-height:1.5; max-width:580px; }
+.tool-cta { display:inline-flex; align-items:center; gap:10px; min-height:46px; padding:0 20px; border:0; border-radius:11px; color:#fff; background:var(--primary); font-size:13px; font-weight:800; cursor:pointer; white-space:nowrap; transition:transform .18s,box-shadow .18s; box-shadow:0 8px 18px rgba(36,92,171,.18); flex-shrink:0; font-family:inherit; }
+.tool-cta:hover { transform:translateY(-2px); background:#1e4e93; box-shadow:0 12px 24px rgba(36,92,171,.25); }
+
+/* EMI Calculator Full View */
+.emi-calculator-view { width:min(1080px,100%); margin:0 auto; animation:feature-in .35s ease both; }
+.emi-view-header { margin-bottom:28px; }
+.back-nav-button { display:inline-flex; align-items:center; gap:6px; padding:8px 0; border:0; background:transparent; color:var(--primary); font-size:13.5px; font-weight:750; cursor:pointer; margin-bottom:12px; font-family:inherit; transition:transform .18s; }
+.back-nav-button:hover { transform:translateX(-3px); }
+.emi-intro { max-width:680px; }
+.emi-eyebrow { display:block; color:var(--primary); font-size:11px; font-weight:800; letter-spacing:1.1px; margin-bottom:6px; }
+.emi-intro h1 { margin:0 0 8px; font-size:clamp(28px,3.5vw,40px); letter-spacing:-1.3px; color:var(--navy); }
+.emi-intro p { margin:0; color:var(--muted); font-size:15px; line-height:1.6; }
+
+.emi-layout { display:grid; grid-template-columns:1.05fr .95fr; gap:24px; align-items:start; }
+.emi-card { background:#fff; border:1px solid var(--border); border-radius:24px; box-shadow:var(--shadow); overflow:hidden; }
+.emi-card-header { display:flex; align-items:center; justify-content:space-between; padding:22px 28px; border-bottom:1px solid var(--border); background:linear-gradient(180deg,#fff,#fbfdff); }
+.card-kicker { display:block; color:var(--primary); font-size:10.5px; font-weight:800; letter-spacing:1.1px; margin-bottom:4px; }
+.emi-card-header h2 { margin:0; font-size:18px; letter-spacing:-.3px; color:var(--navy); }
+.emi-card-icon { display:grid; place-items:center; width:38px; height:38px; border-radius:11px; color:var(--primary); background:var(--primary-soft); font-size:18px; font-weight:800; }
+
+.emi-form { padding:26px 28px; }
+.emi-form-group { margin-bottom:20px; }
+.emi-label-row { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; }
+.emi-label { font-size:13.5px; font-weight:750; color:var(--navy); cursor:pointer; }
+.emi-label-sub { font-size:11px; color:var(--muted); font-weight:600; }
+.emi-input-wrap { display:flex; align-items:center; height:54px; padding:0 16px; border:1.5px solid #dce5f1; border-radius:13px; background:#fff; transition:border-color .18s,box-shadow .18s; }
+.emi-input-wrap:focus-within { border-color:var(--primary); box-shadow:0 0 0 3.5px rgba(36,92,171,.12); }
+.emi-input-wrap.has-error { border-color:var(--danger); background:#fffafb; }
+.input-prefix { color:var(--primary); font-size:17px; font-weight:800; margin-right:10px; user-select:none; }
+.emi-input { width:100%; border:0; outline:0; font-size:17px; font-weight:700; color:var(--navy); background:transparent; font-family:inherit; }
+.emi-input::placeholder { color:#b5c3d4; font-weight:500; font-size:15px; }
+.emi-field-hint { margin:6px 2px 0; color:var(--muted); font-size:11.5px; }
+
+.emi-tenure-control { display:flex; gap:10px; align-items:center; }
+.tenure-input-wrap { flex:1; }
+.tenure-unit-toggle { display:flex; padding:3px; background:#edf3fc; border-radius:11px; gap:3px; }
+.unit-btn { padding:9px 14px; border:0; border-radius:8px; font-size:12px; font-weight:750; color:#556986; background:transparent; cursor:pointer; transition:all .18s ease; font-family:inherit; }
+.unit-btn.active { background:#fff; color:var(--primary); box-shadow:0 2px 6px rgba(36,92,171,.15); }
+.unit-btn:hover:not(.active) { color:var(--navy); }
+
+.emi-form-actions { display:flex; gap:12px; margin-top:26px; }
+.emi-submit-btn { flex:1; min-height:50px; border:0; border-radius:12px; color:#fff; background:var(--primary); font-size:14px; font-weight:800; cursor:pointer; transition:all .18s; box-shadow:0 8px 18px rgba(36,92,171,.2); font-family:inherit; }
+.emi-submit-btn:hover { background:#1e4e93; transform:translateY(-2px); box-shadow:0 12px 24px rgba(36,92,171,.26); }
+.emi-reset-btn { min-height:50px; padding:0 22px; border:1px solid #dce4ef; border-radius:12px; color:var(--muted); background:#f7f9fc; font-size:13.5px; font-weight:750; cursor:pointer; transition:all .18s; font-family:inherit; }
+.emi-reset-btn:hover { background:#eaf0f8; color:var(--navy); border-color:#c8d7ea; }
+
+.emi-result-content { padding:24px 28px 16px; }
+.emi-primary-display { text-align:center; padding:22px 20px; border-radius:18px; background:linear-gradient(135deg,#edf4fc,#f5f9ff); border:1px solid #d8e5f5; margin-bottom:18px; }
+.primary-label { display:block; font-size:11px; font-weight:800; letter-spacing:.8px; color:var(--primary); text-transform:uppercase; margin-bottom:6px; }
+.primary-value { display:block; font-size:clamp(30px,3.8vw,42px); font-weight:850; letter-spacing:-1.4px; color:var(--navy); line-height:1.1; }
+.primary-subtext { display:block; font-size:12px; color:var(--muted); margin-top:7px; font-weight:600; }
+
+.emi-metrics-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+.metric-box { padding:13px 15px; border:1px solid #e7edf5; border-radius:13px; background:#fafcff; }
+.metric-box.full-width { grid-column:1 / -1; background:#f4f8fe; border-color:#d7e5f6; }
+.metric-title { display:block; font-size:11px; font-weight:700; color:var(--muted); margin-bottom:3px; }
+.metric-amount { display:block; font-size:17px; font-weight:800; letter-spacing:-.4px; }
+.principal-color { color:var(--primary); }
+.interest-color { color:#b97305; }
+.total-color { color:var(--navy); }
+.metric-share { display:block; font-size:10.5px; color:var(--muted); margin-top:2px; font-weight:600; }
+
+.emi-breakdown-panel { padding:14px 16px; border:1px solid #e7edf5; border-radius:13px; background:#fff; margin-bottom:18px; }
+.breakdown-labels { display:flex; justify-content:space-between; font-size:11.5px; font-weight:750; color:var(--navy); margin-bottom:8px; }
+.legend-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+.principal-dot { background:var(--primary); }
+.interest-dot { background:#e09419; }
+.breakdown-bar { display:flex; height:10px; border-radius:99px; overflow:hidden; background:#eaf0f8; }
+.breakdown-fill { height:100%; border-radius:inherit; transition:width .35s ease; }
+.principal-fill { background:var(--primary); }
+.interest-fill { background:#e09419; }
+
+.emi-assessment-bridge { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:15px 18px; border:1px solid #d3e2f5; border-radius:14px; background:linear-gradient(135deg,#f4f8fe,#fff); margin-bottom:8px; }
+.emi-assessment-bridge strong { display:block; font-size:13px; color:var(--navy); margin-bottom:2px; }
+.emi-assessment-bridge p { margin:0; color:var(--muted); font-size:11.5px; line-height:1.45; }
+.bridge-cta-btn { display:inline-flex; align-items:center; padding:9px 15px; border:0; border-radius:9px; color:#fff; background:var(--primary); font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap; transition:all .18s; font-family:inherit; flex-shrink:0; }
+.bridge-cta-btn:hover { background:#1e4e93; transform:translateY(-1px); }
+
+.emi-empty-state { text-align:center; padding:44px 24px; }
+.empty-state-icon { display:grid; place-items:center; width:48px; height:48px; border-radius:14px; color:var(--primary); background:var(--primary-soft); margin:0 auto 14px; font-size:22px; }
+.emi-empty-state h3 { margin:0 0 8px; font-size:17px; color:var(--navy); }
+.emi-empty-state p { margin:0; color:var(--muted); font-size:13px; line-height:1.6; max-width:320px; margin:0 auto; }
+
+.emi-disclaimer { padding:14px 28px 18px; border-top:1px solid #edf1f7; background:#fafcff; }
+.emi-disclaimer p { margin:0; font-size:11px; color:#7d8c9f; line-height:1.55; }
+.emi-disclaimer strong { color:#57677a; }
+
+@media (max-width:850px) {
+  .emi-layout { grid-template-columns:1fr; }
+  .tool-banner { flex-direction:column; align-items:flex-start; }
+  .tool-cta { width:100%; justify-content:center; }
+}
+
+@media (max-width:600px) {
+  .emi-card-header,.emi-form,.emi-result-content,.emi-disclaimer { padding-left:18px; padding-right:18px; }
+  .emi-metrics-grid { grid-template-columns:1fr; }
+  .emi-assessment-bridge { flex-direction:column; align-items:flex-start; }
+  .bridge-cta-btn { width:100%; justify-content:center; }
+}
