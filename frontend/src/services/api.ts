@@ -6,9 +6,13 @@ import type {
     ValidationResponse,
 } from "../types/loan";
 
-const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL ||
-    "https://loan-approval-prediction-u6r7.onrender.com";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+if (!API_BASE_URL) {
+    throw new Error(
+        "VITE_API_BASE_URL is not configured. Please configure the frontend API URL."
+    );
+}
 
 const api = axios.create({
     baseURL: API_BASE_URL,
