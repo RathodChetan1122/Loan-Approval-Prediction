@@ -4,6 +4,7 @@ interface WelcomeDashboardProps {
   onStart: () => void;
   onKnowScore: () => void;
   onContinueAfterCibil: () => void;
+  onViewPerformance: () => void;
 }
 
 const features = [
@@ -12,7 +13,7 @@ const features = [
   ["✦", "Personalized insights", "See model-based probabilities and useful next steps after your assessment."],
 ];
 
-export default function WelcomeDashboard({ onStart, onKnowScore, onContinueAfterCibil }: WelcomeDashboardProps) {
+export default function WelcomeDashboard({ onStart, onKnowScore, onContinueAfterCibil, onViewPerformance }: WelcomeDashboardProps) {
   return <>
     <section className="welcome-hero" id="home">
       <div className="welcome-copy">
@@ -40,7 +41,10 @@ export default function WelcomeDashboard({ onStart, onKnowScore, onContinueAfter
 
     <section className="feature-section" id="how-it-works" aria-labelledby="feature-title">
       <div className="section-copy"><span>BUILT FOR CLARITY</span><h2>Everything you need before applying</h2><p>A simple, transparent experience designed to help you prepare—not to promise a lender decision.</p></div>
-      <div className="feature-grid">{features.map(([icon, title, description], index) => <article className="feature-card" key={title} style={{ animationDelay: `${index * 80}ms` }}><span>{icon}</span><h3>{title}</h3><p>{description}</p></article>)}</div>
+      <div className="feature-grid">
+        {features.map(([icon, title, description], index) => <article className="feature-card" key={title} style={{ animationDelay: `${index * 80}ms` }}><span>{icon}</span><h3>{title}</h3><p>{description}</p></article>)}
+        <article className="feature-card" style={{ animationDelay: `240ms`, cursor: 'pointer', border: '1px solid var(--primary)' }} onClick={onViewPerformance}><span>📊</span><h3>Model Performance</h3><p>Explore the accuracy, feature importance, and transparency insights behind the LoanWise prediction model.</p><span style={{display: 'inline-block', marginTop: '12px', background: 'transparent', color: 'var(--primary)', fontSize: '12px', padding: 0, fontWeight: 700}}>View Model Performance →</span></article>
+      </div>
     </section>
 
     <section className="process-section" aria-labelledby="process-title">
