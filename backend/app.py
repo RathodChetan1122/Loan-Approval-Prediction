@@ -28,10 +28,14 @@ ALLOWED_ORIGINS = [
     "https://loan-approval-prediction-xi-self.vercel.app",
 ]
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+
+    # Allow Vercel preview deployments as well
     allow_origin_regex=r"https://.*\.vercel\.app",
+
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
