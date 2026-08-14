@@ -25,12 +25,18 @@ MODEL_VERSION = "7-feature-gb-v2"
 # LOAD MODEL BUNDLE
 # ============================================================
 
-model_bundle = joblib.load(MODEL_PATH)
+model = None
+encoders = {}
+FEATURES = []
+model_load_error = None
 
-model = model_bundle["model"]
-encoders = model_bundle["encoders"]
-
-FEATURES = model_bundle["features"]
+try:
+    model_bundle = joblib.load(MODEL_PATH)
+    model = model_bundle["model"]
+    encoders = model_bundle["encoders"]
+    FEATURES = model_bundle["features"]
+except Exception as exc:
+    model_load_error = str(exc)
 
 
 # ============================================================
@@ -42,6 +48,13 @@ def predict_loan(application_data: dict) -> dict:
     Generate a loan approval prediction using the
     validated 7-feature Gradient Boosting model.
     """
+
+    if model is None:
+        raise RuntimeError(
+            "Model is not loaded"
+            if model_load_error is None
+            else f"Model is not loaded: {model_load_error}"
+        )
 
     # --------------------------------------------------------
     # Create input using the exact training feature names
@@ -138,4 +151,5 @@ def get_model_status() -> dict:
         "model_file": MODEL_PATH.name,
         "model_version": MODEL_VERSION,
         "features": FEATURES,
+        "model_load_error": model_load_error,
     }
