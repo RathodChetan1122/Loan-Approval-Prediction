@@ -36,7 +36,10 @@ try:
     encoders = model_bundle["encoders"]
     FEATURES = model_bundle["features"]
 except Exception as exc:
-    model_load_error = str(exc)
+    model_load_error = (
+        f"{type(exc).__name__}: "
+        "failed to load model bundle"
+    )
 
 
 # ============================================================
