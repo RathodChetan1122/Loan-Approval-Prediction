@@ -4,6 +4,7 @@ interface WelcomeDashboardProps {
   onStart: () => void;
   onKnowScore: () => void;
   onContinueAfterCibil: () => void;
+  onOpenCalculator?: () => void;
 }
 
 const features = [
@@ -12,14 +13,26 @@ const features = [
   ["✦", "Personalized insights", "See model-based probabilities and useful next steps after your assessment."],
 ];
 
-export default function WelcomeDashboard({ onStart, onKnowScore, onContinueAfterCibil }: WelcomeDashboardProps) {
+export default function WelcomeDashboard({
+  onStart,
+  onKnowScore,
+  onContinueAfterCibil,
+  onOpenCalculator,
+}: WelcomeDashboardProps) {
   return <>
     <section className="welcome-hero" id="home">
       <div className="welcome-copy">
         <span className="welcome-eyebrow"><i /> SMART LOAN ELIGIBILITY</span>
         <h1>Make smarter borrowing decisions.</h1>
         <p>Analyze your financial profile and understand your predicted loan eligibility before you apply.</p>
-        <button type="button" className="hero-cta" onClick={onStart}>Check my eligibility <span>→</span></button>
+        <div className="hero-cta-group">
+          <button type="button" className="hero-cta" onClick={onStart}>Check my eligibility <span>→</span></button>
+          {onOpenCalculator && (
+            <button type="button" className="hero-secondary-cta" onClick={onOpenCalculator}>
+              <span>₹</span> Calculate EMI
+            </button>
+          )}
+        </div>
         <p className="hero-note">No credit credentials required. Your assessment stays in this browser session.</p>
       </div>
       <div className="hero-visual" aria-hidden="true">
@@ -37,6 +50,29 @@ export default function WelcomeDashboard({ onStart, onKnowScore, onContinueAfter
       </div>
       <div className="cibil-return"><span>After checking your score, return here and enter it in the assessment.</span><button type="button" onClick={onContinueAfterCibil}>I have my score — Continue →</button></div>
     </section>
+
+    {/* Financial Tools Section / EMI Calculator Card */}
+    {onOpenCalculator && (
+      <section className="tools-section" id="financial-tools" aria-labelledby="tools-title">
+        <div className="section-copy">
+          <span>FINANCIAL UTILITIES</span>
+          <h2 id="tools-title">Estimate your monthly commitments</h2>
+          <p>Plan your loan repayment with our accurate reducing-balance EMI calculator before submitting your application.</p>
+        </div>
+        <div className="tool-banner">
+          <div className="tool-banner-content">
+            <span className="tool-icon" aria-hidden="true">₹</span>
+            <div>
+              <h3>Independent Loan EMI Calculator</h3>
+              <p>Calculate your estimated monthly EMI, total interest payable, and total repayment amount with custom interest rates and flexible tenures.</p>
+            </div>
+          </div>
+          <button type="button" className="tool-cta" onClick={onOpenCalculator}>
+            Open EMI Calculator <span>→</span>
+          </button>
+        </div>
+      </section>
+    )}
 
     <section className="feature-section" id="how-it-works" aria-labelledby="feature-title">
       <div className="section-copy"><span>BUILT FOR CLARITY</span><h2>Everything you need before applying</h2><p>A simple, transparent experience designed to help you prepare—not to promise a lender decision.</p></div>
