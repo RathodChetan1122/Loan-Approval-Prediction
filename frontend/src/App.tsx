@@ -4,6 +4,7 @@ import LoanForm from "./components/LoanForm";
 import PredictionResult from "./components/PredictionResult";
 import WelcomeDashboard from "./components/WelcomeDashboard";
 import EmiCalculator from "./components/EmiCalculator";
+import BrandLogo from "./components/BrandLogo";
 import { predictLoan } from "./services/api";
 import type { LoanApplication, PredictionResponse } from "./types/loan";
 
@@ -77,13 +78,9 @@ export default function App() {
           type="button"
           className="brand brand-button"
           onClick={reset}
-          aria-label="LoanWise home"
+          aria-label="Loan Approval Prediction home"
         >
-          <span className="brand-logo" aria-hidden="true">L</span>
-          <span className="brand-copy">
-            <strong>LoanWise</strong>
-            <span>Loan Eligibility Check</span>
-          </span>
+          <BrandLogo />
         </button>
 
         <nav className="desktop-nav" aria-label="Main navigation">
