@@ -4,6 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from routes.loan_routes import router
 
 
+# ============================================================
+# APPLICATION
+# ============================================================
+
 app = FastAPI(
     title="Loan Approval Prediction API",
     description="ML API for 7-feature loan approval prediction",
@@ -15,13 +19,19 @@ app = FastAPI(
 # CORS
 # ============================================================
 
+ALLOWED_ORIGINS = [
+    # Local development
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+
+    # Vercel production frontend
+    "https://loan-approval-prediction-xi-self.vercel.app",
+]
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://loan-approval-prediction-xi-self.vercel.app",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
