@@ -35,9 +35,9 @@ def test_model_status():
     data = response.json()
 
     assert data["model_loaded"] is True
-    assert data["model_type"] == "Pipeline"
-    assert data["model_file"] == "7_feature_loan_approval_model.pkl"
-    assert data["model_version"] == "7-feature-gb-v1"
+    assert data["model_type"] == "GradientBoostingClassifier"
+    assert data["model_file"] == "loan_model.pkl"
+    assert data["model_version"] == "7-feature-gb-v2"
 
 
 def test_valid_application():
