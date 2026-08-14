@@ -3,12 +3,13 @@ import "./App.css";
 import LoanForm from "./components/LoanForm";
 import PredictionResult from "./components/PredictionResult";
 import WelcomeDashboard from "./components/WelcomeDashboard";
-import EmiCalculator from "./components/EmiCalculator";
 import BrandLogo from "./components/BrandLogo";
+import ModelPerformance from "./components/ModelPerformance";
+import EmiCalculator from "./components/EmiCalculator";
 import { predictLoan } from "./services/api";
 import type { LoanApplication, PredictionResponse } from "./types/loan";
 
-type View = "welcome" | "assessment" | "result" | "calculator";
+type View = "welcome" | "assessment" | "result" | "calculator" | "model-performance";
 
 function ShieldIcon() {
   return (
@@ -120,6 +121,10 @@ export default function App() {
             onStart={startAssessment}
             onKnowScore={startAssessment}
             onContinueAfterCibil={startAssessment}
+            onViewPerformance={() => {
+              setView("model-performance");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
             onOpenCalculator={openCalculator}
           />
         )}
@@ -178,6 +183,10 @@ export default function App() {
 
         {view === "result" && result && (
           <PredictionResult result={result} onReset={reset} />
+        )}
+
+        {view === "model-performance" && (
+          <ModelPerformance onBack={reset} />
         )}
       </div>
 
