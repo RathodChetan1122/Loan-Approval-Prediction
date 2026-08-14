@@ -15,17 +15,31 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 MODEL_PATH = (
     BASE_DIR
     / "model"
-    / "7_feature_loan_approval_model.pkl"
+    / "loan_model.pkl"
 )
 
-MODEL_VERSION = "7-feature-gb-v1"
+MODEL_VERSION = "7-feature-gb-v2"
 
 
 # ============================================================
-# LOAD MODEL
+# LOAD MODEL BUNDLE
 # ============================================================
 
-model = joblib.load(MODEL_PATH)
+model = None
+encoders = {}
+FEATURES = []
+model_load_error = None
+
+try:
+    model_bundle = joblib.load(MODEL_PATH)
+    model = model_bundle["model"]
+    encoders = model_bundle["encoders"]
+    FEATURES = model_bundle["features"]
+except Exception as exc:
+    model_load_error = (
+        f"{type(exc).__name__}: "
+        "failed to load model bundle"
+    )
 
 
 # ============================================================
@@ -35,22 +49,48 @@ model = joblib.load(MODEL_PATH)
 def predict_loan(application_data: dict) -> dict:
     """
     Generate a loan approval prediction using the
-    trained 7-feature machine learning pipeline.
+    validated 7-feature Gradient Boosting model.
     """
+
+    if model is None:
+        raise RuntimeError(
+            "Model is not loaded"
+            if model_load_error is None
+            else f"Model is not loaded: {model_load_error}"
+        )
+
+    # --------------------------------------------------------
+    # Create input using the exact training feature names
+    # --------------------------------------------------------
 
     input_data = pd.DataFrame(
         [
             {
                 "Dependents": application_data["dependents"],
                 "Employment_Type": application_data["employment_type"],
-                "Annual_Income": application_data["annual_income"],
                 "Credit_Score": application_data["credit_score"],
+                "Annual_Income": application_data["annual_income"],
                 "Loan_Amount": application_data["loan_amount"],
                 "Loan_Tenure": application_data["loan_tenure"],
                 "Education": application_data["education"],
             }
         ]
     )
+
+    # --------------------------------------------------------
+    # Apply the EXACT encoders used during training
+    # --------------------------------------------------------
+
+    for column, encoder in encoders.items():
+        input_data[column] = encoder.transform(
+            input_data[column]
+        )
+
+    # --------------------------------------------------------
+    # Maintain EXACT feature order
+    # --------------------------------------------------------
+
+    input_data = input_data[FEATURES]
 
     # --------------------------------------------------------
     # ML prediction
@@ -111,9 +151,8 @@ def get_model_status() -> dict:
     return {
         "model_loaded": model is not None,
         "model_type": type(model).__name__,
-        "pipeline_steps": list(
-            model.named_steps.keys()
-        ),
         "model_file": MODEL_PATH.name,
         "model_version": MODEL_VERSION,
+        "features": FEATURES,
+        "model_load_error": model_load_error,
     }
