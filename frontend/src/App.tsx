@@ -3,6 +3,7 @@ import "./App.css";
 import LoanForm from "./components/LoanForm";
 import PredictionResult from "./components/PredictionResult";
 import WelcomeDashboard from "./components/WelcomeDashboard";
+import BrandLogo from "./components/BrandLogo";
 import { predictLoan } from "./services/api";
 import type { LoanApplication, PredictionResponse } from "./types/loan";
 
@@ -22,7 +23,7 @@ export default function App() {
   };
   const reset = () => { setResult(null); setError(null); setView("welcome"); window.scrollTo({ top: 0, behavior: "smooth" }); };
   return <main className="app-shell">
-    <header className="topbar"><button type="button" className="brand brand-button" onClick={reset} aria-label="LoanWise home"><span className="brand-logo" aria-hidden="true">L</span><span className="brand-copy"><strong>LoanWise</strong><span>Loan Eligibility Check</span></span></button><nav className="desktop-nav" aria-label="Main navigation"><a href="#how-it-works">How it works</a><a href="#credit-guide">Credit guide</a></nav><div className="header-actions"><span className="security-badge"><ShieldIcon /><span>Secure &amp; Private</span></span><button type="button" className="header-cta" onClick={startAssessment}>Check eligibility</button></div></header>
+    <header className="topbar"><button type="button" className="brand brand-button" onClick={reset} aria-label="Loan Approval Prediction home"><BrandLogo /></button><nav className="desktop-nav" aria-label="Main navigation"><a href="#how-it-works">How it works</a><a href="#credit-guide">Credit guide</a></nav><div className="header-actions"><span className="security-badge"><ShieldIcon /><span>Secure &amp; Private</span></span><button type="button" className="header-cta" onClick={startAssessment}>Check eligibility</button></div></header>
     <div className="main-container">
       {view === "welcome" && <WelcomeDashboard onStart={startAssessment} onKnowScore={startAssessment} onContinueAfterCibil={startAssessment} />}
       {view === "assessment" && <><section className="assessment-intro"><span>SMART LOAN ELIGIBILITY</span><h1>Your eligibility assessment</h1><p>Answer seven short questions. Your CIBIL score is used as one model input, not as a guarantee of any outcome.</p></section><section className="assessment-wrapper"><div className="assessment-card"><header className="assessment-header"><div><span className="assessment-eyebrow">LOAN ASSESSMENT</span><h2>Let's understand your profile</h2></div><div className="assessment-icon" aria-hidden="true">⌁</div></header><LoanForm onSubmit={handlePrediction} loading={loading} />{loading && <div className="analysis-state" role="status"><span className="analysis-spinner" /><div><strong>Analyzing your information</strong><p>Preparing your model assessment. This may take a moment.</p></div></div>}</div></section>{error && <div className="global-error" role="alert"><span>!</span><div>{error}<button type="button" onClick={() => setError(null)}>Dismiss</button></div></div>}</>}
