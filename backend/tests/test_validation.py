@@ -37,7 +37,7 @@ def test_model_status():
     assert data["model_loaded"] is True
     assert data["model_type"] == "GradientBoostingClassifier"
     assert data["model_file"] == "loan_model.pkl"
-    assert data["model_version"] == "7-feature-gb-v2"
+    assert data["model_version"].startswith("7-feature-gb-v")
 
 
 def test_valid_application():

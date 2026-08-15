@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { PredictionResponse, LoanApplication } from "../types/loan";
 import { predictLoan } from "../services/api";
 
@@ -16,10 +16,21 @@ export default function PredictionResult({ result, initialApplication, onReset }
 
   const [simulatedAmount, setSimulatedAmount] = useState(initialApplication?.loan_amount || 50000);
   const [simulatedTenure, setSimulatedTenure] = useState(initialApplication?.loan_tenure || 12);
-  const [simulatedResult, setSimulatedResult] = useState<PredictionResponse | null>(null);
+  const [simulationResponse, setSimulationResponse] = useState<{
+    result: PredictionResponse;
+    amount: number;
+    tenure: number;
+  } | null>(null);
   const [simulating, setSimulating] = useState(false);
 
   const isInitial = initialApplication && simulatedAmount === initialApplication.loan_amount && simulatedTenure === initialApplication.loan_tenure;
+
+  const simulatedResult = useMemo(() => {
+    if (simulationResponse?.amount === simulatedAmount && simulationResponse?.tenure === simulatedTenure) {
+      return simulationResponse.result;
+    }
+    return null;
+  }, [simulationResponse, simulatedAmount, simulatedTenure]);
 
   useEffect(() => {
     if (!initialApplication || isInitial) return;
@@ -32,7 +43,11 @@ export default function PredictionResult({ result, initialApplication, onReset }
           loan_amount: simulatedAmount,
           loan_tenure: simulatedTenure
         });
-        setSimulatedResult(res);
+        setSimulationResponse({
+          result: res,
+          amount: simulatedAmount,
+          tenure: simulatedTenure
+        });
       } catch (e) {
         console.error("Simulation failed", e);
       } finally {
