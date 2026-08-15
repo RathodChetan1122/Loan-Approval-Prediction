@@ -17,11 +17,81 @@ function isNTCResult(
 }
 
 function formatFeatureName(feature: string): string {
-  return feature
+  const cleaned = feature
     .replace("remainder__", "")
     .replace("categorical__", "")
-    .replace(/_/g, " ")
+    .replace(/_/g, " ");
+
+  return cleaned
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function getSimpleExplanation(
+  feature: string,
+  positive: boolean
+): string {
+  const name = formatFeatureName(feature);
+
+  const explanations: Record<string, string> = {
+    "Annual Income": positive
+      ? "Your income supports your loan application."
+      : "Your income may make approval more difficult.",
+
+    "Loan Amount": positive
+      ? "The requested loan amount is reasonable for your profile."
+      : "The requested loan amount may be high for your profile.",
+
+    "Loan Tenure": positive
+      ? "Your repayment period supports the prediction."
+      : "Your repayment period may affect the prediction.",
+
+    "Dependents": positive
+      ? "Your number of dependents supports the prediction."
+      : "Your number of dependents may affect affordability.",
+
+    "Employment Type Private": positive
+      ? "Your employment profile supports the prediction."
+      : "Your employment profile may affect the prediction.",
+
+    "Employment Type Government": positive
+      ? "Your employment profile supports the prediction."
+      : "Your employment profile may affect the prediction.",
+
+    "Employment Type Self-Employed": positive
+      ? "Your employment profile supports the prediction."
+      : "Your employment profile may affect the prediction.",
+
+    "Employment Type Unemployed": positive
+      ? "Your employment status supports the prediction."
+      : "Your employment status may make approval more difficult.",
+
+    "Employment Type Skilled Labor": positive
+      ? "Your employment profile supports the prediction."
+      : "Your employment profile may affect the prediction.",
+
+    "Education Graduate": positive
+      ? "Your education level supports the prediction."
+      : "Your education level may affect the prediction.",
+
+    "Education Post Graduate": positive
+      ? "Your education level supports the prediction."
+      : "Your education level may affect the prediction.",
+
+    "Education High School": positive
+      ? "Your education level supports the prediction."
+      : "Your education level may affect the prediction.",
+
+    "Education No Formal": positive
+      ? "Your education level supports the prediction."
+      : "Your education level may affect the prediction.",
+  };
+
+  return (
+    explanations[name] ??
+    (positive
+      ? `${name} supports the prediction.`
+      : `${name} may affect the prediction.`)
+  );
 }
 
 export default function PredictionResult({
@@ -39,6 +109,20 @@ export default function PredictionResult({
 
   const decisionProbability =
     isApproved ? approved : rejected;
+
+  /*
+   * For NTC results:
+   * Show only the 3 strongest factors.
+   */
+  const topNTCFactors = isNTCResult(result)
+    ? [...result.shap_explanation]
+        .sort(
+          (a, b) =>
+            Math.abs(b.impact) -
+            Math.abs(a.impact)
+        )
+        .slice(0, 3)
+    : [];
 
   return (
     <section
@@ -164,12 +248,12 @@ export default function PredictionResult({
 
 
       {/* =====================================================
-          SHAP EXPLANATION
-          ONLY FOR NTC
+          SIMPLE NTC EXPLANATION
+          ONLY TOP 3 FACTORS
       ===================================================== */}
 
       {isNTCResult(result) &&
-        result.shap_explanation.length > 0 && (
+        topNTCFactors.length > 0 && (
 
           <section
             className="insights-panel"
@@ -189,8 +273,8 @@ export default function PredictionResult({
                 </p>
 
                 <small>
-                  Feature-level explanation of the
-                  New-To-Credit model prediction
+                  The 3 most important factors
+                  considered by the model
                 </small>
 
               </div>
@@ -200,71 +284,53 @@ export default function PredictionResult({
 
             <div className="suggestions-list">
 
-              {result.shap_explanation
-                .slice(0, 10)
-                .map(
-                  (
-                    item: {
-                      feature: string;
-                      impact: number;
-                    },
-                    index: number
-                  ) => {
+              {topNTCFactors.map(
+                (item, index) => {
 
-                    const positive =
-                      item.impact >= 0;
+                  const positive =
+                    item.impact >= 0;
 
-                    return (
-                      <div
-                        className="suggestion-item"
-                        style={{
-                          animationDelay:
-                            `${index * 70}ms`,
-                        }}
-                        key={`${item.feature}-${index}`}
-                      >
+                  return (
+                    <div
+                      className="suggestion-item"
+                      style={{
+                        animationDelay:
+                          `${index * 70}ms`,
+                      }}
+                      key={`${item.feature}-${index}`}
+                    >
 
-                        <span>
-                          {positive
-                            ? "↑"
-                            : "↓"}
-                        </span>
+                      <span>
+                        {positive
+                          ? "↑"
+                          : "↓"}
+                      </span>
 
-                        <p>
+                      <p>
 
-                          <strong>
-                            {formatFeatureName(
-                              item.feature
-                            )}
-                          </strong>
+                        <strong>
+                          {formatFeatureName(
+                            item.feature
+                          )}
+                        </strong>
 
-                          {" — "}
+                        {" — "}
 
-                          {positive
-                            ? "supports the prediction"
-                            : "works against the prediction"}
+                        {getSimpleExplanation(
+                          item.feature,
+                          positive
+                        )}
 
-                          {" ("}
+                      </p>
 
-                          {positive
-                            ? "+"
-                            : ""}
-
-                          {item.impact.toFixed(3)}
-
-                          {")"}
-
-                        </p>
-
-                      </div>
-                    );
-                  }
-                )}
+                    </div>
+                  );
+                }
+              )}
 
             </div>
 
           </section>
-
         )}
 
 
