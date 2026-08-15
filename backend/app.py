@@ -20,9 +20,15 @@ app = FastAPI(
 # ============================================================
 
 ALLOWED_ORIGINS = [
-    # Local development
+    # Local development ports
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:5175",
+    "http://127.0.0.1:5175",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 
     # Production Vercel deployment
     "https://loan-approval-prediction-xi-self.vercel.app",
@@ -33,8 +39,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
 
-    # Allow Vercel preview deployments as well
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    # Allow any local port (5173, 5174, etc.) as well as all Vercel preview/production deployments
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://.*\.vercel\.app",
 
     allow_credentials=True,
     allow_methods=["*"],

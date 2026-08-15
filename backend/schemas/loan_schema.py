@@ -57,11 +57,39 @@ class LoanApplication(BaseModel):
         return value
 
 
+class ExplanationFactor(BaseModel):
+    feature: str
+    label: str
+    user_value: str
+    impact_level: str
+    impact_direction: str
+    raw_contribution: float
+    explanation: str
+    is_actionable: bool
+
+
+class ActionPlanItem(BaseModel):
+    priority: int
+    title: str
+    factor_label: str
+    reason: str
+    recommendation: str
+
+
+class LoanExplanation(BaseModel):
+    top_negative_factors: list[ExplanationFactor]
+    positive_factors: list[ExplanationFactor]
+    all_factors: list[ExplanationFactor]
+    action_plan: list[ActionPlanItem]
+    disclaimer: str
+
+
 class PredictionResponse(BaseModel):
     prediction: str
     approved_probability: float
     rejected_probability: float
     suggestions: list[str]
+    explanation: LoanExplanation | None = None
 
 
 class ValidationResponse(BaseModel):

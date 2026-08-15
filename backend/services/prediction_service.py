@@ -3,6 +3,7 @@ from pathlib import Path
 import joblib
 import pandas as pd
 
+from services.explainability_service import explain_prediction
 from services.suggestion_service import generate_suggestions
 
 
@@ -118,11 +119,19 @@ def predict_loan(application_data: dict) -> dict:
     )
 
     # --------------------------------------------------------
-    # Generate applicant guidance
+    # Generate applicant guidance & explainability
     # --------------------------------------------------------
 
     suggestions = generate_suggestions(
         application_data
+    )
+
+    explanation = explain_prediction(
+        application_data=application_data,
+        encoded_df=input_data,
+        model=model,
+        features=FEATURES,
+        is_approved=(prediction == 1),
     )
 
     return {
@@ -136,6 +145,7 @@ def predict_loan(application_data: dict) -> dict:
             4,
         ),
         "suggestions": suggestions,
+        "explanation": explanation,
     }
 
 
