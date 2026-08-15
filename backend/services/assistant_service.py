@@ -7,20 +7,160 @@ import urllib.error
 SYSTEM_INSTRUCTION = """You are "LoanWise AI", an expert Loan & Financial Assistant specializing in:
 1. Loan Approval Prediction & Eligibility factors (Annual Income, CIBIL/Credit Score, DTI ratio, Employment stability, Dependents, Loan Tenure).
 2. Credit Score (CIBIL/Experian) Guidance: Score ranges (300-900), improving credit score from poor (<600) to fair (600-699) and good/excellent (700-900), dispute resolution, credit utilization ratio (<30%), impact of multiple hard inquiries, and credit mix.
-3. Loan Types & Terms: Personal loans, Home loans, Education loans, Vehicle loans, Business loans, Fixed vs Floating interest rates.
+3. Loan Types & Terms: Personal loans, Home loans, Education loans, Vehicle loans, Business loans, Gold loans, Fixed vs Floating interest rates.
 4. EMI Planning & Debt Management: EMI calculation formula, balancing tenure vs total interest paid, prepayment strategies, foreclosure, and Debt-to-Income (DTI) optimization.
 5. Documentation & Verification: KYC (Aadhaar, PAN), income proof (ITR, Form 16, Salary Slips, Bank Statements), property documents, and guarantor requirements.
+6. Core Financial Literacy: Money, interest rates, inflation, compound interest, credit cards vs debit cards, collateral, amortization, and tax benefits.
 
 Tone and Style:
-- Clear, professional, encouraging, and highly structured with bullet points, bold key terms, and concise actionable steps.
-- Provide direct answers with practical financial advice.
-- When relevant, offer tips on how to improve approval chances with Indian and global banking standards.
-- Always include a polite reminder that approval decisions ultimately rest with individual lending institutions and credit underwriting policies.
+- Direct, clear, professional, educational, and structured with clear headings, bullet points, bold key terms, and actionable takeaways.
+- Provide immediate, direct answers to the exact question asked without generic deflection.
+- When relevant, offer tips on how to improve borrowing outcomes.
 """
 
-FALLBACK_KNOWLEDGE = [
+KNOWLEDGE_BASE = [
     {
-        "keywords": ["cibil", "credit score", "improve score", "increase score", "raise score", "low score"],
+        "keywords": ["what is money", "meaning of money", "define money", "concept of money"],
+        "reply": (
+            "### 💵 What is Money?\n\n"
+            "**Money** is any universally accepted medium of exchange that allows individuals and businesses to trade goods, services, and settle debts without relying on direct barter.\n\n"
+            "#### The 4 Core Functions of Money:\n"
+            "1. **Medium of Exchange**: Facilitates smooth trade without requiring a 'double coincidence of wants'.\n"
+            "2. **Unit of Account**: Provides a common metric (like ₹ INR or $ USD) to measure the economic value of goods and assets.\n"
+            "3. **Store of Value**: Enables wealth to be saved and retrieved in the future (though inflation can erode purchasing power over time).\n"
+            "4. **Standard of Deferred Payment**: Forms the legal foundation for borrowing, loans, credit, and future contracts.\n\n"
+            "#### Forms of Modern Money:\n"
+            "- **Fiat Currency**: Cash issued by central banks (e.g., RBI, Federal Reserve) backed by government guarantee.\n"
+            "- **Commercial Bank Money**: Digital balances in savings and current bank accounts.\n"
+            "- **Digital Currency & UPI**: Electronic payment layers enabling instant settlement."
+        ),
+        "suggestions": [
+            "What is a loan and how does it work?",
+            "What is inflation and how does it affect loans?",
+            "What is the difference between simple and compound interest?"
+        ]
+    },
+    {
+        "keywords": ["what is loan", "what is a loan", "meaning of loan", "define loan", "how do loans work", "what are loans"],
+        "reply": (
+            "### 🏦 What is a Loan and How Does It Work?\n\n"
+            "A **loan** is a financial contract where a **lender** (a bank, NBFC, or credit union) gives a lump sum of money (the **Principal**) to a **borrower**, who agrees to repay that amount over a specified period (**Tenure**) along with an additional fee called **Interest**.\n\n"
+            "#### Key Elements of Every Loan:\n"
+            "1. **Principal Amount**: The original sum of money borrowed.\n"
+            "2. **Interest Rate**: The percentage charged by the lender for the use of their capital (can be Fixed or Floating).\n"
+            "3. **Loan Tenure**: The duration (months or years) allowed to pay back the loan.\n"
+            "4. **EMI (Equated Monthly Installment)**: Fixed monthly payments combining part of the principal and part of the interest.\n"
+            "5. **Collateral/Security**: An asset pledged by the borrower for secured loans (e.g., house, car, gold).\n\n"
+            "#### Broad Categories of Loans:\n"
+            "- **Secured Loans**: Backed by assets (Home Loans, Auto Loans, Gold Loans). Feature lower interest rates and higher sanction amounts.\n"
+            "- **Unsecured Loans**: No collateral required (Personal Loans, Education Loans, Credit Cards). Rely heavily on your **CIBIL Score** and income stability."
+        ),
+        "suggestions": [
+            "How do banks calculate loan eligibility?",
+            "What is the difference between secured and unsecured loans?",
+            "What is an EMI and how is it calculated?"
+        ]
+    },
+    {
+        "keywords": ["what is interest", "interest rate", "how interest works", "simple vs compound interest", "apr"],
+        "reply": (
+            "### 📈 Understanding Interest Rates and How They Work\n\n"
+            "**Interest** is the cost of borrowing money. From the borrower's perspective, it is the rent paid to use the lender's funds; from the lender's perspective, it is the reward for taking on credit risk.\n\n"
+            "#### 1. Simple vs. Compound Interest:\n"
+            "- **Simple Interest (SI)**: Calculated purely on the initial principal amount (`SI = P × R × T / 100`).\n"
+            "- **Compound Interest (CI)**: Interest is calculated on the initial principal *plus* all accumulated interest from previous periods ('interest on interest'). Almost all retail loans and credit cards use reducing-balance compounding.\n\n"
+            "#### 2. Fixed vs. Floating Interest Rate:\n"
+            "- **Fixed Rate**: The interest rate remains locked throughout the entire loan tenure regardless of market fluctuations.\n"
+            "- **Floating / Variable Rate**: The rate is linked to an external benchmark (like the RBI Repo Rate) and adjusts periodically when central bank policy changes.\n\n"
+            "#### 3. What is APR (Annual Percentage Rate)?\n"
+            "APR represents the true total annual cost of the loan, including the base interest rate plus upfront processing fees, administrative charges, and documentation costs."
+        ),
+        "suggestions": [
+            "Should I choose fixed or floating interest rate?",
+            "How does credit score impact my interest rate?",
+            "How to reduce total interest paid on a loan?"
+        ]
+    },
+    {
+        "keywords": ["fixed vs floating", "fixed rate", "floating rate", "variable rate"],
+        "reply": (
+            "### ⚖️ Fixed Rate vs. Floating Rate Loans: Which Should You Choose?\n\n"
+            "| Feature | Fixed Interest Rate | Floating Interest Rate |\n"
+            "| :--- | :--- | :--- |\n"
+            "| **Monthly EMI** | Remains 100% constant throughout tenure | Fluctuates based on benchmark (RBI Repo Rate) |\n"
+            "| **Budget Predictability** | High – exact monthly outflow is known | Variable – EMI or tenure may increase or decrease |\n"
+            "| **Initial Interest Rate** | Usually 1.0% - 2.5% higher than floating | Typically lower initial rate |\n"
+            "| **Prepayment Penalties** | Banks may charge 2-4% penalty on fixed loans | **Zero penalty** for individual floating home loans (RBI mandate) |\n\n"
+            "**💡 Recommendation:**\n"
+            "- Choose **Floating Rate** for long-term loans (e.g. Home Loans, 10-20 yrs) to benefit from rate cut cycles and penalty-free prepayments.\n"
+            "- Choose **Fixed Rate** during historically low-interest regimes or for short-term personal/auto loans where budget certainty is paramount."
+        ),
+        "suggestions": [
+            "How does RBI repo rate affect home loan EMIs?",
+            "What is prepayment penalty on personal loans?",
+            "How to boost CIBIL score to get the lowest rate?"
+        ]
+    },
+    {
+        "keywords": ["personal loan", "unsecured loan", "what is personal loan"],
+        "reply": (
+            "### 💳 Personal Loans: Features, Eligibility & Pros/Cons\n\n"
+            "A **Personal Loan** is an **unsecured** multi-purpose loan that you can use for medical emergencies, home renovation, weddings, travel, or debt consolidation without pledging any asset.\n\n"
+            "#### Key Characteristics:\n"
+            "- **Tenure**: Typically 1 to 5 years (up to 7 years with some lenders).\n"
+            "- **Interest Rates**: Typically ranges between **10.5% and 24% p.a.** depending on credit score and employer profile.\n"
+            "- **Sanction Speed**: Fast approval (often same-day to 48 hours) for pre-approved salaried applicants.\n\n"
+            "#### Crucial Approval Factors:\n"
+            "1. **CIBIL Score (750+)**: Low scores trigger high interest rates or outright rejection.\n"
+            "2. **Net Monthly Salary**: Consistent monthly bank credits (minimum ₹25,000 - ₹35,000 for top banks).\n"
+            "3. **Employer Reputation**: Employees of Category 'A' MNCs or Government departments receive favorable rates."
+        ),
+        "suggestions": [
+            "What are the top reasons personal loans get rejected?",
+            "Personal Loan vs Gold Loan: Which is cheaper?",
+            "How to calculate personal loan EMI?"
+        ]
+    },
+    {
+        "keywords": ["home loan", "housing loan", "mortgage", "what is home loan", "property loan"],
+        "reply": (
+            "### 🏡 Home Loans (Mortgages): Complete Overview\n\n"
+            "A **Home Loan** is a secured loan provided by banks/housing finance companies (HFCs) to purchase a ready home, construct a house, buy a plot, or renovate existing property.\n\n"
+            "#### Key Features:\n"
+            "- **Tenure**: Long repayment terms from **10 to 30 years**.\n"
+            "- **LTV (Loan-to-Value) Ratio**: Banks fund **75% to 90%** of the property's registered value; the remaining 10-25% is paid as your **Down Payment**.\n"
+            "- **Tax Deductions** (Indian Income Tax Act):\n"
+            "  - **Section 80C**: Up to ₹1.5 Lakh per financial year on Principal repayment.\n  - **Section 24(b)**: Up to ₹2 Lakh per financial year on Interest paid for self-occupied property.\n\n"
+            "#### Key Documents Needed:\n"
+            "- Property chain title documents, sanctioned building plan, NOC from society/builder, 3-yr ITR, and 6-month salary bank statements."
+        ),
+        "suggestions": [
+            "How to calculate maximum home loan eligibility?",
+            "What is LTV (Loan-to-Value) ratio?",
+            "How do partial prepayments shorten home loan tenure?"
+        ]
+    },
+    {
+        "keywords": ["credit card", "debit card", "credit card vs debit card", "difference between credit and debit"],
+        "reply": (
+            "### 💳 Credit Card vs. Debit Card: Key Differences\n\n"
+            "| Aspect | Debit Card | Credit Card |\n"
+            "| :--- | :--- | :--- |\n"
+            "| **Source of Funds** | Deducted instantly from your own bank account | Borrowed from the bank's pre-approved credit line |\n"
+            "| **Credit Building** | Does **NOT** build or impact your CIBIL score | Directly reports repayment history to CIBIL/Experian |\n"
+            "| **Interest Grace Period** | None (your own money is used) | **45 to 50 interest-free days** if bill is paid in full |\n"
+            "| **Fraud Protection** | Slower resolution if account is drained | High protection; transactions can be disputed/charged back |\n"
+            "| **Perks & Rewards** | Basic reward points / cashback | Higher reward points, airport lounge access, milestones |\n\n"
+            "**⚠️ Golden Rule for Credit Cards:** Always pay the **Total Amount Due** in full before the billing due date. Never pay just the 'Minimum Due' because the remaining balance accrues 36% - 45% annual interest!"
+        ),
+        "suggestions": [
+            "How does credit card utilization affect CIBIL score?",
+            "Does closing an old credit card decrease my credit score?",
+            "How to boost CIBIL score to 750+?"
+        ]
+    },
+    {
+        "keywords": ["cibil", "credit score", "improve score", "increase score", "raise score", "low score", "what is cibil"],
         "reply": (
             "### 📈 How to Improve & Strengthen Your CIBIL Credit Score\n\n"
             "Your CIBIL/Credit Score (ranging between **300 and 900**) is one of the most critical factors in loan approval. "
@@ -35,11 +175,11 @@ FALLBACK_KNOWLEDGE = [
         "suggestions": [
             "What is the ideal Debt-to-Income (DTI) ratio for loans?",
             "What documents are required for quick loan approval?",
-            "Does checking my own CIBIL score reduce it?",
+            "Does checking my own CIBIL score reduce it?"
         ]
     },
     {
-        "keywords": ["rejection", "rejected", "why reject", "declined", "reasons"],
+        "keywords": ["rejection", "rejected", "why reject", "declined", "reasons", "denied"],
         "reply": (
             "### ⚠️ Top Reasons for Loan Rejection and How to Fix Them\n\n"
             "Banks use automated underwriting algorithms to evaluate credit risk. The most common rejection triggers include:\n\n"
@@ -53,11 +193,11 @@ FALLBACK_KNOWLEDGE = [
         "suggestions": [
             "How can I improve my CIBIL score quickly?",
             "Should I choose a longer tenure or higher EMI?",
-            "How does employment type affect interest rates?",
+            "How does employment type affect interest rates?"
         ]
     },
     {
-        "keywords": ["eligibility", "calculate eligibility", "qualify", "how much loan", "how do banks calculate"],
+        "keywords": ["eligibility", "calculate eligibility", "qualify", "how much loan", "how do banks calculate", "dti", "foir"],
         "reply": (
             "### 📊 How Banks Calculate Your Loan Eligibility\n\n"
             "Lenders primarily use the **FOIR (Fixed Obligation to Income Ratio)** and **DTI (Debt-to-Income Ratio)** to determine maximum loan sanction:\n\n"
@@ -75,11 +215,11 @@ FALLBACK_KNOWLEDGE = [
         "suggestions": [
             "What are the best ways to reduce my existing EMI burden?",
             "What documents are needed for salaried vs self-employed?",
-            "How to check loan approval probability on this platform?",
+            "How to check loan approval probability on this platform?"
         ]
     },
     {
-        "keywords": ["documents", "documentation", "papers", "kyc", "what do i need to apply"],
+        "keywords": ["documents", "documentation", "papers", "kyc", "what do i need to apply", "required docs"],
         "reply": (
             "### 📑 Essential Documents Required for Loan Applications\n\n"
             "Having your documentation organized in advance ensures swift verification and prevents processing delays:\n\n"
@@ -101,27 +241,46 @@ FALLBACK_KNOWLEDGE = [
         "suggestions": [
             "What is a good CIBIL score for personal vs home loans?",
             "How do banks evaluate self-employed loan applicants?",
-            "How does loan tenure impact total interest paid?",
+            "How does loan tenure impact total interest paid?"
         ]
     },
     {
-        "keywords": ["emi", "tenure", "interest", "calculate", "longer tenure", "shorter tenure"],
+        "keywords": ["emi", "tenure", "calculate emi", "formula", "longer tenure", "shorter tenure", "prepayment", "foreclosure"],
         "reply": (
-            "### ⚖️ Choosing Between Longer Tenure vs. Shorter Tenure\n\n"
-            "Balancing your loan tenure against your monthly cash flow is essential for optimal financial health:\n\n"
-            "#### Comparison:\n"
-            "- **Shorter Tenure (e.g., 2 to 5 years)**:\n"
-            "  - ✅ **Pro**: Significantly lower total interest paid over the life of the loan.\n"
-            "  - ⚠️ **Con**: Higher monthly EMI, requiring higher disposable income.\n"
-            "- **Longer Tenure (e.g., 10 to 20+ years)**:\n"
-            "  - ✅ **Pro**: Lower monthly EMI, easier to fit within DTI limits and higher approval odds.\n"
-            "  - ⚠️ **Con**: Substantially higher cumulative interest paid.\n\n"
-            "**💡 Smart Borrowing Tip:** Opt for a comfortable tenure that keeps your EMI under 30% of your take-home pay, but make **annual partial prepayments** (e.g., using bonuses) to drastically reduce interest costs."
+            "### ⚖️ Equated Monthly Installment (EMI) & Tenure Planning\n\n"
+            "An **EMI** consists of both Principal and Interest components. In the initial years, the interest portion dominates; towards the end of tenure, principal repayment dominates.\n\n"
+            "#### Mathematical EMI Formula:\n"
+            "$$\\text{EMI} = \\frac{P \\times r \\times (1 + r)^n}{(1 + r)^n - 1}$$\n"
+            "- **P** = Principal loan amount\n"
+            "- **r** = Monthly interest rate (Annual rate / 12 / 100)\n"
+            "- **n** = Tenure in number of months\n\n"
+            "#### Shorter vs. Longer Tenure:\n"
+            "- **Shorter Tenure (e.g. 3-5 yrs)**: Higher monthly EMI, but dramatically lower total interest paid.\n"
+            "- **Longer Tenure (e.g. 15-20 yrs)**: Lower monthly EMI, easier approval under DTI rules, but higher total interest outlay.\n\n"
+            "**💡 Smart Prepayment Strategy:** Paying just **one extra EMI each year** or increasing your EMI by 5% annually can reduce a 20-year home loan tenure down to ~12 years!"
         ),
         "suggestions": [
-            "How do I use the built-in EMI Calculator on this site?",
-            "How can I improve my loan approval chances with low income?",
+            "How does CIBIL score affect EMI?",
+            "What is Debt-to-Income (DTI) ratio?",
+            "Why do loans get rejected?"
+        ]
+    },
+    {
+        "keywords": ["hello", "hi", "hey", "who are you", "what can you do", "help"],
+        "reply": (
+            "### 👋 Hello! I'm your AI Loan & Financial Assistant\n\n"
+            "I'm here to help you navigate borrowing, credit, and personal finance with clear, unbiased insights. Here's what you can ask me:\n\n"
+            "- **Loan Eligibility & Approval**: Understand how banks evaluate income, employment, and DTI ratios.\n"
+            "- **Credit Score (CIBIL/Experian)**: Actionable ways to boost your score to 750+ and fix reporting errors.\n"
+            "- **Loan Types**: Personal loans, Home loans, Auto loans, Education loans, and Gold loans.\n"
+            "- **EMI & Interest Rates**: Fixed vs. floating rates, EMI formulas, and smart prepayment strategies.\n"
+            "- **Required Documentation**: Step-by-step paperwork checklist for quick approval.\n\n"
+            "What financial question would you like to explore today?"
+        ),
+        "suggestions": [
+            "How to boost CIBIL score to 750+?",
             "What is the difference between fixed and floating interest rates?",
+            "What is a loan and how do banks calculate eligibility?"
         ]
     }
 ]
@@ -140,92 +299,48 @@ DEFAULT_SUGGESTIONS = [
         "icon": "shield-alert"
     },
     {
-        "title": "Debt-to-Income (DTI) Impact",
-        "prompt": "What is Debt-to-Income (DTI) ratio and how does it affect my loan approval odds?",
-        "category": "Loan Approval Queries",
-        "icon": "percent"
-    },
-    {
-        "title": "Required Loan Documents",
-        "prompt": "What documents are required for quick salaried and self-employed loan approval?",
-        "category": "Loan Approval Queries",
-        "icon": "file-text"
-    },
-    {
         "title": "Boost CIBIL Score to 750+",
-        "prompt": "How can I improve my CIBIL score from 650 to 750+ step-by-step?",
+        "prompt": "What actionable steps can I take to improve my CIBIL score to 750 or higher?",
         "category": "Credit Score Queries",
         "icon": "trending-up"
     },
     {
-        "title": "Credit Score Check Myth",
-        "prompt": "Does checking my own CIBIL score frequently reduce my credit rating?",
-        "category": "Credit Score Queries",
-        "icon": "help-circle"
-    },
-    {
-        "title": "Ideal Score for Loans",
-        "prompt": "What is the minimum credit score required for personal loans vs home loans in India?",
-        "category": "Credit Score Queries",
-        "icon": "award"
-    },
-    {
-        "title": "Recover from Late Payments",
-        "prompt": "How do late EMI or credit card payments affect my credit report and how long does recovery take?",
-        "category": "Credit Score Queries",
+        "title": "Shorter vs Longer Tenure",
+        "prompt": "Should I choose a longer tenure with lower EMI or shorter tenure with higher EMI?",
+        "category": "EMI & Planning",
         "icon": "clock"
-    },
-    {
-        "title": "Tenure vs EMI Optimization",
-        "prompt": "Should I choose a longer repayment tenure with smaller EMI or a shorter tenure with higher EMI?",
-        "category": "EMI & Planning",
-        "icon": "sliders"
-    },
-    {
-        "title": "Employment Type Influence",
-        "prompt": "How does employment type (Government, Private, Self-Employed) influence loan approval and interest rates?",
-        "category": "EMI & Planning",
-        "icon": "briefcase"
     }
 ]
 
 
-def _call_gemini_api(
-    message: str,
-    history: List[dict],
-    context: Optional[dict] = None
-) -> Optional[str]:
+def _call_gemini_api(message: str, history: List[dict], context: Optional[dict] = None) -> Optional[str]:
     """
-    Attempt to call Google Gemini API using configured API keys.
+    Directly queries Google Gemini LLM via official Generative Language REST API.
     Supports GEMINI_API_KEY or GOOGLE_API_KEY environment variables.
     """
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
         return None
 
-    # Construct conversation contents for Gemini REST API
-    # Gemini 2.5 Flash / Gemini 2.0 Flash / Gemini 1.5 Flash
+    # Supported fast model endpoints
     models_to_try = [
         "gemini-2.5-flash",
         "gemini-2.0-flash",
         "gemini-1.5-flash",
     ]
 
-    # Build system prompt with context if present
     full_system = SYSTEM_INSTRUCTION
     if context:
-        full_system += f"\n\nApplicant Context:\n{json.dumps(context, indent=2)}"
+        full_system += f"\n\nApplicant Financial Context:\n{json.dumps(context, indent=2)}"
 
     contents = []
-    # Add history
-    for item in history[-6:]:  # Keep recent turns
+    for item in history[-6:]:
         role = "user" if item.get("role") == "user" else "model"
         contents.append({
             "role": role,
             "parts": [{"text": item.get("content", "")}]
         })
 
-    # Add current user message
     contents.append({
         "role": "user",
         "parts": [{"text": message}]
@@ -268,11 +383,12 @@ def _call_gemini_api(
 
 def _get_fallback_reply(message: str, context: Optional[dict] = None) -> tuple[str, List[str]]:
     """
-    Generate an intelligent expert financial response when Gemini API is offline or without key.
+    Generate an intelligent, topic-specific expert financial response when Gemini API is offline or without key.
     """
     msg_lower = message.lower()
 
-    for item in FALLBACK_KNOWLEDGE:
+    # Match exact or semantic topic keywords
+    for item in KNOWLEDGE_BASE:
         if any(kw in msg_lower for kw in item["keywords"]):
             return item["reply"], item["suggestions"]
 
@@ -303,20 +419,20 @@ def _get_fallback_reply(message: str, context: Optional[dict] = None) -> tuple[s
         ]
         return reply, suggestions
 
-    # Generic comprehensive response
+    # Contextual, respectful fallback that addresses the specific subject asked
     reply = (
-        "### 💡 LoanWise AI Assistant\n\n"
-        f"Thank you for your question regarding **'{message.strip()}'**.\n\n"
-        "Here are key financial fundamentals to consider:\n"
-        "- **Credit Score (CIBIL 750+)**: Serves as the primary filter for interest rate discounts and quick sanction.\n"
-        "- **Fixed Obligation to Income (FOIR)**: Ensure total monthly EMIs stay below **40%-50%** of your net monthly earnings.\n"
-        "- **Employment & Income Stability**: At least 1-2 years continuous service with verifiable tax returns (ITR/Form 16) reinforces repayment capacity.\n"
-        "- **Tenure Selection**: Use our independent EMI Calculator to find the right equilibrium between affordable monthly installments and total interest cost.\n\n"
-        "Feel free to click any of the suggested topics below or ask a specific question about your financial scenario!"
+        f"### 💡 Financial Insights on \"{message.strip()}\"\n\n"
+        f"Regarding **{message.strip()}**:\n\n"
+        "In modern banking and personal finance, decisions revolve around four core pillars:\n"
+        "1. **Creditworthiness (CIBIL Score)**: Lenders evaluate past repayment reliability before approving any loan or financial product.\n"
+        "2. **Cash Flow & Debt Burden**: Keeping fixed monthly debt commitments (DTI/FOIR) under **40%-50%** ensures you remain financially sound.\n"
+        "3. **Cost of Capital (Interest Rate)**: Always compare the Annual Percentage Rate (APR), processing fees, and foreclosure terms.\n"
+        "4. **Emergency Liquidity**: Maintain 3 to 6 months of expenses in an easily accessible liquid fund.\n\n"
+        "Would you like to explore a specific loan type, calculate an EMI, or learn how to optimize your credit score?"
     )
     suggestions = [
-        "How do banks calculate loan eligibility?",
-        "How can I improve my CIBIL score to 750+?",
+        "What is a loan and how does it work?",
+        "How to boost CIBIL score to 750+?",
         "What causes instant loan rejection?",
     ]
     return reply, suggestions
@@ -342,7 +458,6 @@ def process_chat_message(
     gemini_reply = _call_gemini_api(message, history_list, context)
 
     if gemini_reply:
-        # Generate dynamic follow-up suggestions
         suggestions = [
             "What documents are required for quick approval?",
             "How does my CIBIL score affect interest rates?",
@@ -355,7 +470,7 @@ def process_chat_message(
             "status": "success",
         }
 
-    # Use specialized fallback engine
+    # Use specialized topic fallback engine
     reply, suggestions = _get_fallback_reply(message, context)
     return {
         "reply": reply,
