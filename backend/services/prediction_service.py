@@ -1,8 +1,41 @@
 from pathlib import Path
+import sys
+from typing import Any
 
 import joblib
+import numpy as np
 import pandas as pd
 
+# Compatibility shims for loading scikit-learn 1.6.1 serialized pipelines
+# across varied Python/scikit-learn runtime versions without altering model artifacts.
+try:
+    import sklearn.compose._column_transformer
+    if not hasattr(sklearn.compose._column_transformer, "_RemainderColsList"):
+        class _RemainderColsList(list):
+            pass
+        sklearn.compose._column_transformer._RemainderColsList = _RemainderColsList
+except Exception:
+    pass
+
+try:
+    import sklearn._loss
+    if not hasattr(sklearn._loss, "CyHalfBinomialLoss"):
+        sklearn._loss.CyHalfBinomialLoss = getattr(sklearn._loss, "HalfBinomialLoss", None)
+    if "_loss" not in sys.modules:
+        sys.modules["_loss"] = sklearn._loss
+except Exception:
+    pass
+
+try:
+    import sklearn.impute._base
+    if not hasattr(sklearn.impute._base.SimpleImputer, "_fill_dtype"):
+        sklearn.impute._base.SimpleImputer._fill_dtype = property(
+            lambda self: getattr(self, "_fit_dtype", np.float64)
+        )
+except Exception:
+    pass
+
+from services.max_loan_service import find_maximum_eligible_loan
 from services.suggestion_service import generate_suggestions
 
 
@@ -32,10 +65,10 @@ model = joblib.load(MODEL_PATH)
 # PREDICTION
 # ============================================================
 
-def predict_loan(application_data: dict) -> dict:
+def predict_loan(application_data: dict[str, Any]) -> dict[str, Any]:
     """
-    Generate a loan approval prediction using the
-    trained 7-feature machine learning pipeline.
+    Generate a loan approval prediction and maximum eligible loan estimation
+    using the trained 7-feature machine learning pipeline.
     """
 
     input_data = pd.DataFrame(
@@ -85,6 +118,15 @@ def predict_loan(application_data: dict) -> dict:
         application_data
     )
 
+    # --------------------------------------------------------
+    # Evaluate Maximum Eligible Loan Amount
+    # --------------------------------------------------------
+
+    max_loan_info = find_maximum_eligible_loan(
+        application_data=application_data,
+        model=model,
+    )
+
     return {
         "prediction": prediction_label,
         "approved_probability": round(
@@ -96,7 +138,23 @@ def predict_loan(application_data: dict) -> dict:
             4,
         ),
         "suggestions": suggestions,
+        "requested_loan_amount": max_loan_info["requested_loan_amount"],
+        "maximum_eligible_amount": max_loan_info["maximum_eligible_amount"],
+        "maximum_eligible_prediction": max_loan_info["maximum_eligible_prediction"],
+        "max_eligible_approved_probability": max_loan_info["max_eligible_approved_probability"],
+        "max_loan_status": max_loan_info["max_loan_status"],
+        "max_loan_message": max_loan_info["max_loan_message"],
     }
+
+
+def estimate_maximum_loan(application_data: dict[str, Any]) -> dict[str, Any]:
+    """
+    Dedicated calculation for maximum eligible loan amount.
+    """
+    return find_maximum_eligible_loan(
+        application_data=application_data,
+        model=model,
+    )
 
 
 # ============================================================

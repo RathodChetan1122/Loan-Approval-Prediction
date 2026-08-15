@@ -62,6 +62,21 @@ class PredictionResponse(BaseModel):
     approved_probability: float
     rejected_probability: float
     suggestions: list[str]
+    requested_loan_amount: int
+    maximum_eligible_amount: int
+    maximum_eligible_prediction: str
+    max_eligible_approved_probability: float
+    max_loan_status: str
+    max_loan_message: str
+
+
+class MaxLoanEstimateResponse(BaseModel):
+    requested_loan_amount: int
+    maximum_eligible_amount: int
+    maximum_eligible_prediction: str
+    max_eligible_approved_probability: float
+    max_loan_status: str
+    max_loan_message: str
 
 
 class ValidationResponse(BaseModel):

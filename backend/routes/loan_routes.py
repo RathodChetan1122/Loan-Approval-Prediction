@@ -2,11 +2,13 @@ from fastapi import APIRouter
 
 from schemas.loan_schema import (
     LoanApplication,
+    MaxLoanEstimateResponse,
     PredictionResponse,
     ValidationResponse,
 )
 
 from services.prediction_service import (
+    estimate_maximum_loan,
     get_model_status,
     predict_loan,
 )
@@ -66,5 +68,21 @@ def predict_application(
     application: LoanApplication,
 ):
     return predict_loan(
+        application.model_dump()
+    )
+
+
+# ============================================================
+# MAXIMUM ELIGIBLE LOAN ESTIMATION
+# ============================================================
+
+@router.post(
+    "/max-eligible-loan",
+    response_model=MaxLoanEstimateResponse,
+)
+def max_eligible_loan_application(
+    application: LoanApplication,
+):
+    return estimate_maximum_loan(
         application.model_dump()
     )

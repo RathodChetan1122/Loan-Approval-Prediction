@@ -2,6 +2,7 @@ import axios from "axios";
 
 import type {
     LoanApplication,
+    MaxLoanEstimateResponse,
     PredictionResponse,
     ValidationResponse,
 } from "../types/loan";
@@ -27,6 +28,17 @@ export const predictLoan = async (
 ): Promise<PredictionResponse> => {
     const response = await api.post<PredictionResponse>(
         "/predict",
+        application
+    );
+
+    return response.data;
+};
+
+export const getMaxEligibleLoan = async (
+    application: LoanApplication
+): Promise<MaxLoanEstimateResponse> => {
+    const response = await api.post<MaxLoanEstimateResponse>(
+        "/max-eligible-loan",
         application
     );
 

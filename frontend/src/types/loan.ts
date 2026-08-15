@@ -35,6 +35,32 @@ export interface PredictionResponse {
   rejected_probability: number;
 
   suggestions: string[];
+
+  requested_loan_amount?: number;
+
+  maximum_eligible_amount?: number;
+
+  maximum_eligible_prediction?: "Approved" | "Rejected";
+
+  max_eligible_approved_probability?: number;
+
+  max_loan_status?: "eligible" | "none_eligible" | "max_limit_reached";
+
+  max_loan_message?: string;
+}
+
+export interface MaxLoanEstimateResponse {
+  requested_loan_amount: number;
+
+  maximum_eligible_amount: number;
+
+  maximum_eligible_prediction: "Approved" | "Rejected";
+
+  max_eligible_approved_probability: number;
+
+  max_loan_status: "eligible" | "none_eligible" | "max_limit_reached";
+
+  max_loan_message: string;
 }
 
 export interface ValidationResponse {

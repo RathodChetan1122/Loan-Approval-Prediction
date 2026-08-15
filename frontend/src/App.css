@@ -54,3 +54,144 @@ button:focus-visible,input:focus-visible { outline:3px solid rgba(35,113,236,.32
 .cibil-decision { margin-top:30px; border:1px solid #cfdceb; border-radius:18px; background:#fff; box-shadow:0 8px 24px rgba(29,48,78,.06); }.cibil-decision .section-copy { max-width:680px; }.cibil-options { gap:16px; }.cibil-choice { border-color:#d9e2ee; border-radius:14px; box-shadow:none; }.cibil-choice:hover { border-color:#7d9ecc; box-shadow:0 8px 18px rgba(29,48,78,.08); }.known-score { background:#f8fbff; }.choice-symbol { background:#245cab; border-radius:9px; }.check-score .choice-symbol { color:#7b5a24; background:#fbf3e5; }.official-cibil-button { border-color:#9db4d4; border-radius:8px; color:#1f559e; background:#fff; }.official-cibil-button:hover { border-color:#245cab; background:#f7faff; }.cibil-return { color:#69798d; border-top-color:#e7edf4; }.cibil-return button { color:#245cab; }.feature-section { margin-top:52px; }.feature-card { border-radius:14px; box-shadow:none; }.feature-card:hover { box-shadow:0 8px 18px rgba(29,48,78,.08); }.feature-card > span { color:#245cab; background:#edf3fc; }.process-list li { border-top-color:#a7bddc; }.process-list b,.section-copy > span { color:#245cab; }
 .assessment-card { box-shadow:0 10px 28px rgba(29,48,78,.08); }.score-slider { border-color:#d9e2ee; background:#fff; }.score-slider::before { border-color:rgba(36,92,171,.12); }.score-orb { border-color:#e7eef8; background:conic-gradient(#245cab var(--range-progress),#9dbce6 var(--range-progress),#e7eef8 0); box-shadow:none; }.score-slider .score-display strong { color:#245cab; }.continue-button { background:#245cab; }.continue-button:hover:not(:disabled) { background:#1e4e93; }.question-icon { color:#245cab; background:#f8fbff; }.progress-fill { background:#245cab; }
 @media (max-width:800px) { .hero-visual { border-left:0; border-top:1px solid #e8edf3; } }
+
+/* Maximum Predicted Eligible Loan Amount Styling */
+.max-loan-panel {
+  margin: 18px 0;
+  padding: 24px 28px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 26px rgba(20, 50, 90, 0.05);
+}
+.max-loan-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.max-loan-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  color: #fff;
+  background: var(--primary);
+  font-size: 22px;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(36, 92, 171, 0.2);
+}
+.max-loan-eyebrow {
+  display: block;
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+  margin-bottom: 3px;
+}
+.max-loan-header h2 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.4px;
+  color: var(--navy);
+}
+.max-loan-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.max-loan-metric-card {
+  padding: 18px 20px;
+  border: 1px solid #e5edf7;
+  border-radius: 14px;
+  background: #fafcff;
+}
+.max-loan-metric-card .metric-label {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+.max-loan-metric-card .metric-value {
+  display: block;
+  margin: 6px 0 10px;
+  color: var(--navy);
+  font-size: 26px;
+  letter-spacing: -0.8px;
+  line-height: 1.15;
+}
+.eligible-metric .metric-value {
+  color: var(--primary);
+}
+.status-pill,
+.prob-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 750;
+}
+.pill-approved {
+  color: #1a6e4d;
+  background: #e8f7f0;
+  border: 1px solid #c2ead7;
+}
+.pill-rejected {
+  color: #b9404f;
+  background: #fef0f2;
+  border: 1px solid #fad2d7;
+}
+.prob-pill {
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: 1px solid #d5e4f7;
+}
+.max-loan-comparison-box {
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.max-loan-comparison-box p {
+  margin: 0;
+}
+.comparison-within {
+  background: #f2faf6;
+  border: 1px solid #cdeee0;
+  color: #1c6246;
+}
+.comparison-above {
+  background: #fff9f0;
+  border: 1px solid #f7e2c0;
+  color: #875c12;
+}
+.comparison-none {
+  background: #fdf4f5;
+  border: 1px solid #f9d1d5;
+  color: #9c333f;
+}
+.suggested-amount-highlight {
+  margin-top: 4px !important;
+  font-size: 13px;
+}
+.suggested-amount-highlight strong {
+  color: #875c12;
+}
+.max-loan-disclaimer {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+@media (max-width: 700px) {
+  .max-loan-grid {
+    grid-template-columns: 1fr;
+  }
+  .max-loan-panel {
+    padding: 18px;
+  }
+}
