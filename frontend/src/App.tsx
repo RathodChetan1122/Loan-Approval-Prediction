@@ -7,6 +7,7 @@ import BrandLogo from "./components/BrandLogo";
 import ModelPerformance from "./components/ModelPerformance";
 import EmiCalculator from "./components/EmiCalculator";
 import AiLoanAssistant from "./components/AiLoanAssistant";
+import AiFloatingButton from "./components/AiFloatingButton";
 import { predictLoan } from "./services/api";
 import type { LoanApplication, PredictionResponse } from "./types/loan";
 
@@ -36,6 +37,7 @@ function ShieldIcon() {
 
 export default function App() {
   const [view, setView] = useState<View>("welcome");
+  const [previousView, setPreviousView] = useState<View>("welcome");
   const [result, setResult] = useState<PredictionResponse | null>(null);
   const [application, setApplication] = useState<LoanApplication | null>(null);
   const [loading, setLoading] = useState(false);
@@ -53,9 +55,14 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const openAssistant = () => {
+  const toggleAssistant = () => {
     setError(null);
-    setView("assistant");
+    if (view === "assistant") {
+      setView(previousView || "welcome");
+    } else {
+      setPreviousView(view);
+      setView("assistant");
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -98,13 +105,6 @@ export default function App() {
           <button
             type="button"
             className="nav-link-btn"
-            onClick={openAssistant}
-          >
-            AI Loan Assistant
-          </button>
-          <button
-            type="button"
-            className="nav-link-btn"
             onClick={openCalculator}
           >
             EMI Calculator
@@ -143,13 +143,12 @@ export default function App() {
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
             onOpenCalculator={openCalculator}
-            onOpenAssistant={openAssistant}
           />
         )}
 
         {view === "assistant" && (
           <AiLoanAssistant
-            onBack={reset}
+            onBack={() => setView(previousView || "welcome")}
             applicationContext={application}
           />
         )}
@@ -221,7 +220,12 @@ export default function App() {
         <span className="footer-dot">•</span>
         <span>Model-based guidance, not a lender decision</span>
       </footer>
+
+      {/* Floating Meta AI-style Robot Logo Button at bottom-right corner */}
+      <AiFloatingButton
+        onClick={toggleAssistant}
+        isOpen={view === "assistant"}
+      />
     </main>
   );
 }
-

@@ -6,7 +6,6 @@ interface WelcomeDashboardProps {
   onContinueAfterCibil: () => void;
   onViewPerformance: () => void;
   onOpenCalculator?: () => void;
-  onOpenAssistant?: () => void;
 }
 
 const ModelPerformanceIcon = () => (
@@ -25,19 +24,12 @@ const CibilLogoIcon = () => (
   </svg>
 );
 
-const SparklesIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/>
-  </svg>
-);
-
 export default function WelcomeDashboard({
   onStart,
   onKnowScore,
   onContinueAfterCibil,
   onViewPerformance,
   onOpenCalculator,
-  onOpenAssistant,
 }: WelcomeDashboardProps) {
   return <>
     <section className="welcome-hero" id="home">
@@ -47,11 +39,6 @@ export default function WelcomeDashboard({
         <p>Analyze your financial profile and understand your predicted loan eligibility before you apply.</p>
         <div className="hero-cta-group">
           <button type="button" className="hero-cta" onClick={onStart}>Check my eligibility <span>→</span></button>
-          {onOpenAssistant && (
-            <button type="button" className="hero-secondary-cta" onClick={onOpenAssistant} style={{ background: '#eef8f6', color: 'var(--primary)', borderColor: 'var(--primary)' }}>
-              <span>✦</span> AI Loan Assistant
-            </button>
-          )}
           {onOpenCalculator && (
             <button type="button" className="hero-secondary-cta" onClick={onOpenCalculator}>
               <span>₹</span> Calculate EMI
@@ -79,29 +66,20 @@ export default function WelcomeDashboard({
     <section className="feature-section" id="how-it-works" aria-labelledby="feature-title">
       <div className="section-copy"><span>BUILT FOR CLARITY</span><h2>Everything you need before applying</h2><p>A simple, transparent experience designed to help you prepare—not to promise a lender decision.</p></div>
       <div className="feature-grid">
-        {onOpenAssistant && (
-          <article className="feature-card" style={{ animationDelay: `0ms`, cursor: 'pointer', border: '1px solid var(--primary)' }} onClick={onOpenAssistant}>
-            <span style={{ color: 'var(--primary)' }}><SparklesIcon /></span>
-            <h3>AI Loan Assistant</h3>
-            <p>Ask real-time questions regarding credit score improvements, loan rejection causes, eligibility rules, and required documentation.</p>
-            <span style={{display: 'inline-block', marginTop: '12px', background: 'transparent', color: 'var(--primary)', fontSize: '12px', padding: 0, fontWeight: 700}}>Chat with AI Assistant →</span>
-          </article>
-        )}
-
-        <article className="feature-card" style={{ animationDelay: `60ms`, cursor: 'pointer' }} onClick={onViewPerformance}>
+        <article className="feature-card" style={{ animationDelay: `0ms`, cursor: 'pointer' }} onClick={onViewPerformance}>
           <span><ModelPerformanceIcon /></span>
           <h3>Model Performance</h3>
           <p>Explore the accuracy, feature importance, and transparency insights behind the LoanWise prediction model.</p>
           <span style={{display: 'inline-block', marginTop: '12px', background: 'transparent', color: 'var(--primary)', fontSize: '12px', padding: 0, fontWeight: 700}}>View Model Performance →</span>
         </article>
 
-        <article className="feature-card" style={{ animationDelay: `120ms`, cursor: 'pointer' }} onClick={() => window.open('https://www.cibil.com/freecibilscore', '_blank', 'noopener,noreferrer')}>
+        <article className="feature-card" style={{ animationDelay: `60ms`, cursor: 'pointer' }} onClick={() => window.open('https://www.cibil.com/freecibilscore', '_blank', 'noopener,noreferrer')}>
           <span style={{ padding: '0', background: 'transparent' }}><CibilLogoIcon /></span>
           <h3>CIBIL guidance</h3>
           <p>Check your score securely with the official CIBIL website when you need it.</p>
         </article>
 
-        <article className="feature-card" style={{ animationDelay: `180ms` }}>
+        <article className="feature-card" style={{ animationDelay: `120ms` }}>
           <span>✦</span>
           <h3>Personalized insights</h3>
           <p>See model-based probabilities and useful next steps after your assessment.</p>
@@ -130,4 +108,3 @@ export default function WelcomeDashboard({
     </section>
   </>;
 }
-

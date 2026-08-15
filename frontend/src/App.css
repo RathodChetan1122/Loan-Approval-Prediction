@@ -926,8 +926,111 @@ button:focus-visible,input:focus-visible { outline:3px solid rgba(35,113,236,.32
   margin-top: 2px;
 }
 
-/* Responsive */
+/* ============================================================
+   FLOATING META AI-STYLE ROBOT LOGO BUTTON
+   ============================================================ */
+
+.meta-ai-floating-fab {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 9999;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  display: grid;
+  place-items: center;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.35));
+}
+
+.fab-glow-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #ec4899, #d946ef, #6366f1, #06b6d4, #ec4899);
+  opacity: 0.85;
+  filter: blur(4px);
+  animation: fabSpinGlow 8s linear infinite;
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.fab-inner-surface {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #080b18;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.12), inset 0 -4px 10px rgba(0, 0, 0, 0.6);
+}
+
+.fab-robot-svg {
+  width: 44px;
+  height: 44px;
+  display: block;
+  transition: transform 0.25s ease;
+}
+
+/* Hover & Active States */
+.meta-ai-floating-fab:hover {
+  transform: translateY(-4px) scale(1.08);
+}
+
+.meta-ai-floating-fab:hover .fab-glow-ring {
+  opacity: 1;
+  filter: blur(6px);
+  inset: -4px;
+}
+
+.meta-ai-floating-fab:hover .fab-robot-svg {
+  transform: scale(1.06);
+}
+
+.meta-ai-floating-fab:active {
+  transform: translateY(0) scale(0.95);
+}
+
+.meta-ai-floating-fab.is-open {
+  transform: scale(1.04);
+}
+
+.meta-ai-floating-fab.is-open .fab-glow-ring {
+  background: conic-gradient(from 180deg, #06b6d4, #6366f1, #d946ef, #ec4899, #06b6d4);
+  opacity: 1;
+  filter: blur(5px);
+}
+
+@keyframes fabSpinGlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
+  .meta-ai-floating-fab {
+    bottom: 20px;
+    right: 20px;
+    width: 54px;
+    height: 54px;
+  }
+  .fab-robot-svg {
+    width: 38px;
+    height: 38px;
+  }
+
   .fresh-assistant-header {
     flex-direction: column;
     align-items: stretch;
@@ -950,4 +1053,5 @@ button:focus-visible,input:focus-visible { outline:3px solid rgba(35,113,236,.32
     grid-template-columns: 1fr;
   }
 }
+
 
