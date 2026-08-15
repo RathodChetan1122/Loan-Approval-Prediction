@@ -335,3 +335,153 @@ button:focus-visible,input:focus-visible { outline:3px solid rgba(35,113,236,.32
   .simulator-content { flex-direction: column; gap: 16px; }
   .simulator-impact { width: 100%; padding: 20px; }
 }
+
+/* =========================================================================
+   PREMIUM DARK MODE
+   ========================================================================= */
+
+body[data-theme="dark"] {
+    --primary: #3b82f6;        /* Bright glowing blue */
+    --primary-soft: rgba(59, 130, 246, 0.15);
+    --navy: #f8fafc;           /* Main text color (off-white) */
+    --success: #10b981;        /* Bright green */
+    --danger: #ef4444;         /* Bright red */
+    --gold: #f59e0b;           /* Warm gold */
+    --background: #020617;     /* Deepest navy background */
+    --surface: #0f172a;        /* Surface color (slightly lighter navy) */
+    --border: #1e293b;         /* Subtle border */
+    --muted: #94a3b8;          /* Muted text */
+    --shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+
+  /* Global Shell & Layout Overrides */
+  & .app-shell {
+    background: radial-gradient(circle at 0 15%, rgba(59, 130, 246, 0.12), transparent 28%), var(--background) !important;
+  }
+
+  /* Brand Overrides */
+  .project-brand-copy, .project-brand-copy span {
+    color: #f1f5f9;
+  }
+  .security-badge { color: #64748b; }
+
+  /* Typography / Text Colors */
+  .hero-section p, .question-description, .assessment-note, .tool-banner-content p {
+    color: var(--muted);
+  }
+  .welcome-copy h1, .section-copy h2, .tool-banner-content h3 {
+    color: #f8fafc;
+  }
+
+  /* Assessment Card & Forms */
+  .assessment-card, .slider-area, .result-page .decision-card, .probability-panel, .insights-panel, .simulator-panel, .slider-group {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    box-shadow: var(--shadow) !important;
+  }
+  
+  .assessment-header, .slider-area, .decision-card {
+    background: var(--surface) !important; 
+  }
+
+  .help-card {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+  }
+  .help-card strong { color: #f1f5f9 !important; }
+
+  /* Cards, Options, and Inputs */
+  .number-option, .choice-card, .education-card, .currency-input {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+  }
+  .number-option:hover, .choice-card:hover, .education-card:hover {
+    border-color: var(--primary) !important;
+    background: #253347 !important;
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15) !important;
+  }
+  .choice-icon { background: #0f172a !important; color: #60a5fa !important; }
+  .number-option.selected, .choice-card.selected, .education-card.selected {
+    background: rgba(59, 130, 246, 0.1) !important;
+    border-color: var(--primary) !important;
+    color: #60a5fa !important;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.2) !important;
+  }
+
+  .currency-input input { color: var(--navy) !important; }
+  .currency-input:focus-within {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25) !important;
+  }
+
+  /* Buttons */
+  .continue-button, .reset-button, .tool-cta, .hero-cta {
+    background: var(--primary) !important;
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3) !important;
+    border: none !important;
+    color: #fff !important;
+  }
+  .continue-button:hover:not(:disabled), .reset-button:hover, .tool-cta:hover, .hero-cta:hover {
+    background: #2563eb !important;
+    box-shadow: 0 12px 28px rgba(59, 130, 246, 0.5) !important; 
+  }
+
+  .back-button, .nav-link-btn, .cibil-return button { color: var(--muted) !important; }
+  .back-button:hover, .nav-link-btn:hover { color: var(--navy) !important; }
+
+  /* Results Page */
+  .decision-icon { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); } 
+  .result-rejected .decision-icon { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+
+  .probability-ring > div { background: var(--surface) !important; }
+  .suggestion-item {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+  }
+  .suggestion-item p { color: #cbd5e1 !important; }
+
+  /* Dashboard Adjustments */
+  .welcome-hero {
+    background: linear-gradient(120deg, #0f172a 0%, #1e293b 100%) !important;
+    border-color: var(--border) !important;
+  }
+  .visual-score { background: conic-gradient(var(--primary) 72%, #334155 0 82%, #1e293b 0) !important; border-color: #334155 !important; }
+  .visual-score::before { background: var(--surface) !important; }
+  .visual-insight { background: #1e293b !important; border-color: #334155 !important; box-shadow: 0 15px 30px rgba(0,0,0,0.5) !important; }
+  .visual-insight b { color: #f1f5f9 !important; }
+
+  .cibil-decision { background: #1e293b !important; border-color: #334155 !important; }
+  .cibil-choice { background: #0f172a !important; border-color: var(--border) !important; color: #cbd5e1 !important; }
+  .official-cibil-button { background: transparent !important; border-color: #475569 !important; color: #94a3b8 !important; }
+  .official-cibil-button:hover { background: rgba(59, 130, 246, 0.1) !important; border-color: var(--primary) !important; color: #60a5fa !important; }
+
+  .feature-card { background: #1e293b !important; border-color: #334155 !important; }
+  .feature-card p { color: #94a3b8 !important; }
+
+  /* Simulator Adjustments */
+  .simulator-panel { background: #1e293b !important; border-color: #334155 !important; }
+  .slider-group { background: #0f172a !important; border-color: #334155 !important; }
+  .simulator-impact { background: #0f172a !important; border-color: #334155 !important; }
+  .simulator-panel header p { color: #f8fafc !important; }
+  .slider-header strong { color: var(--primary) !important; }
+  
+  /* Rejection Guide */
+  .rejection-guide { background: #1e293b !important; border-color: #334155 !important; }
+  .rejection-guide header p { color: #f8fafc !important; }
+  .guide-grid article { background: #0f172a !important; border-color: #334155 !important; }
+  .guide-grid h2 { color: #cbd5e1 !important; }
+  
+  /* Form Navigation & Progress */
+  .form-navigation { border-top-color: #334155 !important; }
+  .progress-track { background: #334155 !important; }
+  .progress-fill { box-shadow: 0 0 12px rgba(59, 130, 246, 0.6) !important; }
+  
+  /* Misc Fixes */
+  .diff-up { color: #10b981 !important; background: rgba(16, 185, 129, 0.15) !important; }
+  .diff-down { color: #ef4444 !important; background: rgba(239, 68, 68, 0.15) !important; }
+  .score-slider::before { border-color: #334155 !important; }
+  .score-orb { border-color: #334155 !important; background: conic-gradient(var(--primary) var(--range-progress), #334155 var(--range-progress), #1e293b 0) !important; }
+  .score-orb strong { color: #f8fafc !important; }
+  .hero-secondary-cta { background: transparent !important; border-color: #334155 !important; color: #94a3b8 !important; }
+  .hero-secondary-cta:hover { border-color: var(--primary) !important; color: var(--primary) !important; background: rgba(59, 130, 246, 0.1) !important; }
+}
