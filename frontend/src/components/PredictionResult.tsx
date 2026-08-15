@@ -19,13 +19,10 @@ export default function PredictionResult({ result, initialApplication, onReset }
   const [simulatedResult, setSimulatedResult] = useState<PredictionResponse | null>(null);
   const [simulating, setSimulating] = useState(false);
 
+  const isInitial = initialApplication && simulatedAmount === initialApplication.loan_amount && simulatedTenure === initialApplication.loan_tenure;
+
   useEffect(() => {
-    if (!initialApplication) return;
-    
-    if (simulatedAmount === initialApplication.loan_amount && simulatedTenure === initialApplication.loan_tenure) {
-      setSimulatedResult(null);
-      return;
-    }
+    if (!initialApplication || isInitial) return;
 
     const timer = setTimeout(async () => {
       setSimulating(true);
@@ -44,9 +41,10 @@ export default function PredictionResult({ result, initialApplication, onReset }
     }, 450);
 
     return () => clearTimeout(timer);
-  }, [simulatedAmount, simulatedTenure, initialApplication]);
+  }, [simulatedAmount, simulatedTenure, initialApplication, isInitial]);
 
-  const simApproved = simulatedResult ? simulatedResult.approved_probability * 100 : approved;
+  const activeSimulatedResult = isInitial ? null : simulatedResult;
+  const simApproved = activeSimulatedResult ? activeSimulatedResult.approved_probability * 100 : approved;
   const diff = simApproved - approved;
 
   return (
