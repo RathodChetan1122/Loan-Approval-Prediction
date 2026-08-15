@@ -4,6 +4,8 @@ import type {
     LoanApplication,
     PredictionResponse,
     ValidationResponse,
+    NTCApplication,
+    NTCPredictionResponse,
 } from "../types/loan";
 
 const PRIMARY_API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
@@ -47,6 +49,17 @@ export const predictLoan = async (
     }
 };
 
+export const predictNTC = async (
+    application: NTCApplication
+): Promise<NTCPredictionResponse> => {
+    const response = await api.post<NTCPredictionResponse>(
+        "/new-predict",
+        application
+    );
+
+    return response.data;
+};
+
 export const validateLoan = async (
     application: LoanApplication
 ): Promise<ValidationResponse> => {
@@ -60,13 +73,11 @@ export const validateLoan = async (
 
 export const checkHealth = async () => {
     const response = await api.get("/health");
-
     return response.data;
 };
 
 export const checkModelStatus = async () => {
     const response = await api.get("/model-status");
-
     return response.data;
 };
 

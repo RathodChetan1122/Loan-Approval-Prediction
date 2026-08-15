@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from routes.loan_routes import router
-
+from routes.ntc_routes import router as ntc_router
 
 # ============================================================
 # APPLICATION
@@ -53,3 +53,4 @@ app.add_middleware(
 # ============================================================
 
 app.include_router(router)
+app.include_router(ntc_router)

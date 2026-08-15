@@ -31,16 +31,31 @@ encoders = {}
 FEATURES = []
 model_load_error = None
 
-try:
-    model_bundle = joblib.load(MODEL_PATH)
-    model = model_bundle["model"]
-    encoders = model_bundle["encoders"]
-    FEATURES = model_bundle["features"]
-except Exception as exc:
-    model_load_error = (
-        f"{type(exc).__name__}: "
-        "failed to load model bundle"
-    )
+# Track version increments
+_version_counter = 2
+
+def reload_model():
+    global model, encoders, FEATURES, model_load_error, MODEL_VERSION, _version_counter
+    try:
+        model_bundle = joblib.load(MODEL_PATH)
+        model = model_bundle["model"]
+        encoders = model_bundle["encoders"]
+        FEATURES = model_bundle["features"]
+        model_load_error = None
+        
+        # Increment version on successful reload
+        _version_counter += 1
+        MODEL_VERSION = f"7-feature-gb-v{_version_counter}"
+        print(f"Model reloaded successfully: {MODEL_VERSION}")
+    except Exception as exc:
+        model_load_error = (
+            f"{type(exc).__name__}: "
+            "failed to load model bundle"
+        )
+        print(model_load_error)
+
+# Initial load
+reload_model()
 
 
 # ============================================================
