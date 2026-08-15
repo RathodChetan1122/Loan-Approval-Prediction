@@ -117,3 +117,77 @@ def test_invalid_prediction_input():
     )
 
     assert response.status_code == 422
+
+
+def test_prediction_contains_explainability():
+    response = client.post(
+        "/predict",
+        json=REJECTION_APPLICATION,
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "explanation" in data
+    explanation = data["explanation"]
+    assert explanation is not None
+
+    assert "top_negative_factors" in explanation
+    assert "positive_factors" in explanation
+    assert "action_plan" in explanation
+    assert "disclaimer" in explanation
+
+    # Check top negative factors structure
+    assert len(explanation["top_negative_factors"]) > 0
+    top_factor = explanation["top_negative_factors"][0]
+    assert "feature" in top_factor
+    assert "label" in top_factor
+    assert "user_value" in top_factor
+    assert "impact_level" in top_factor
+    assert "explanation" in top_factor
+    assert "is_actionable" in top_factor
+
+    # Check action plan structure
+    assert len(explanation["action_plan"]) > 0
+    first_action = explanation["action_plan"][0]
+    assert first_action["priority"] == 1
+    assert "title" in first_action
+    assert "reason" in first_action
+    assert "recommendation" in first_action
+
+
+def test_profile_specific_explanations_differ():
+    # Profile 1: Rejection driven by low CIBIL score
+    bad_credit_app = {
+        "dependents": 0,
+        "employment_type": "Private",
+        "annual_income": 3000000,
+        "credit_score": 380,
+        "loan_amount": 1000000,
+        "loan_tenure": 15,
+        "education": "Graduate",
+    }
+    res1 = client.post("/predict", json=bad_credit_app).json()
+    assert res1["prediction"] == "Rejected"
+    exp1 = res1["explanation"]
+    assert exp1["top_negative_factors"][0]["feature"] == "Credit_Score"
+    assert exp1["action_plan"][0]["factor_label"] == "Credit Score (CIBIL)"
+
+    # Profile 2: Rejection driven by excessive loan amount & short tenure
+    excessive_loan_app = {
+        "dependents": 1,
+        "employment_type": "Self-Employed",
+        "annual_income": 1000000,
+        "credit_score": 620,
+        "loan_amount": 25000000,
+        "loan_tenure": 2,
+        "education": "Graduate",
+    }
+    res2 = client.post("/predict", json=excessive_loan_app).json()
+    assert res2["prediction"] == "Rejected"
+    exp2 = res2["explanation"]
+    # In this profile, Loan_Amount is the dominant negative factor
+    assert exp2["top_negative_factors"][0]["feature"] == "Loan_Amount"
+    assert exp2["action_plan"][0]["factor_label"] == "Requested Loan Amount"
+
+    # Confirm explanations are truly personalized and distinct
+    assert exp1["top_negative_factors"][0]["feature"] != exp2["top_negative_factors"][0]["feature"]
