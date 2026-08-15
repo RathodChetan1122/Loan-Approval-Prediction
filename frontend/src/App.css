@@ -300,3 +300,38 @@ button:focus-visible,input:focus-visible { outline:3px solid rgba(35,113,236,.32
   .emi-assessment-bridge { flex-direction:column; align-items:flex-start; }
   .bridge-cta-btn { width:100%; justify-content:center; }
 }
+
+/* Interactive What-If Simulator */
+.simulator-panel { margin-top: 24px; padding: 24px 32px; border: 1px solid var(--border); border-radius: 18px; background: #fff; box-shadow: 0 8px 26px rgba(20,50,90,.05); }
+.simulator-panel header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+.simulator-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; background: var(--primary-soft); font-size: 18px; }
+.simulator-panel header p { margin: 0 0 2px; font-weight: 750; color: var(--navy); }
+.simulator-panel header small { color: var(--muted); font-size: 11px; }
+
+.simulator-content { display: flex; align-items: stretch; gap: 32px; }
+.simulator-controls { flex: 1; display: grid; gap: 24px; }
+.slider-group { background: #fbfdff; padding: 16px 20px; border: 1px solid #e9eef6; border-radius: 14px; }
+.slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.slider-header label { color: var(--muted); font-size: 13px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.5px; }
+.slider-header strong { color: var(--primary); font-size: 16px; font-weight: 800; }
+.simulator-range { height: 6px; }
+.simulator-range::-webkit-slider-thumb { width: 20px; height: 20px; border-width: 3px; }
+
+.simulator-impact { width: 220px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 24px; border: 1px solid #e9eef6; border-radius: 14px; background: linear-gradient(180deg, #fbfdff, #fff); transition: opacity 0.3s; position: relative; }
+.simulator-impact.simulating { opacity: 0.6; }
+.simulator-impact span { color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.simulator-impact strong { font-size: 42px; font-weight: 800; letter-spacing: -1.5px; line-height: 1; margin-bottom: 12px; }
+.impact-good { color: var(--success); }
+.impact-bad { color: var(--danger); }
+
+.impact-diff { display: inline-block; padding: 6px 12px; border-radius: 99px; font-size: 12px; font-weight: 800; }
+.diff-up { color: #147250; background: #ddf4ea; }
+.diff-down { color: #b9404f; background: #ffe2e6; }
+.sim-loading { position: absolute; bottom: 12px; color: var(--primary); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; animation: pulse 1s infinite alternate; }
+
+@keyframes pulse { from { opacity: 0.5; } to { opacity: 1; } }
+
+@media (max-width: 700px) {
+  .simulator-content { flex-direction: column; gap: 16px; }
+  .simulator-impact { width: 100%; padding: 20px; }
+}
