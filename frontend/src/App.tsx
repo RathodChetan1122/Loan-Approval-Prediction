@@ -1,18 +1,41 @@
 import { useState } from "react";
 import "./App.css";
+
 import LoanForm from "./components/LoanForm";
+import NTCForm from "./components/NTCForm";
 import PredictionResult from "./components/PredictionResult";
 import WelcomeDashboard from "./components/WelcomeDashboard";
 import EmiCalculator from "./components/EmiCalculator";
 import BrandLogo from "./components/BrandLogo";
-import { predictLoan } from "./services/api";
-import type { LoanApplication, PredictionResponse } from "./types/loan";
 
-type View = "welcome" | "assessment" | "result" | "calculator";
+import {
+  predictLoan,
+  predictNTC,
+} from "./services/api";
+
+import type {
+  LoanApplication,
+  NTCApplication,
+  PredictionResponse,
+  NTCPredictionResponse,
+} from "./types/loan";
+
+
+type View =
+  | "welcome"
+  | "assessment"
+  | "ntc-assessment"
+  | "result"
+  | "ntc-result"
+  | "calculator";
+
 
 function ShieldIcon() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
       <path
         d="M12 3 19 6v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6l7-3Z"
         fill="none"
@@ -20,6 +43,7 @@ function ShieldIcon() {
         strokeWidth="1.8"
         strokeLinejoin="round"
       />
+
       <path
         d="m9 12 2 2 4-4"
         fill="none"
@@ -32,48 +56,161 @@ function ShieldIcon() {
   );
 }
 
+
 export default function App() {
-  const [view, setView] = useState<View>("welcome");
-  const [result, setResult] = useState<PredictionResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const [view, setView] =
+    useState<View>("welcome");
+
+  const [result, setResult] =
+    useState<PredictionResponse | null>(null);
+
+  const [ntcResult, setNtcResult] =
+    useState<NTCPredictionResponse | null>(null);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+
+  // ============================================================
+  // EXISTING LOAN ASSESSMENT
+  // ============================================================
 
   const startAssessment = () => {
     setError(null);
     setView("assessment");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
-  const openCalculator = () => {
-    setError(null);
-    setView("calculator");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
-  const handlePrediction = async (application: LoanApplication) => {
+  const handlePrediction = async (
+    application: LoanApplication
+  ) => {
+
     try {
       setLoading(true);
       setError(null);
-      setResult(await predictLoan(application));
+
+      const response =
+        await predictLoan(application);
+
+      setResult(response);
       setView("result");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+
     } catch {
-      setError("We couldn't process your application right now. Please try again.");
+      setError(
+        "We couldn't process your application right now. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const reset = () => {
-    setResult(null);
+
+  // ============================================================
+  // NEW-TO-CREDIT ASSESSMENT
+  // ============================================================
+
+  const startNTCAssessment = () => {
     setError(null);
-    setView("welcome");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setNtcResult(null);
+    setView("ntc-assessment");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
+
+
+  const handleNTCPrediction = async (
+    application: NTCApplication
+  ) => {
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response =
+        await predictNTC(application);
+
+      setNtcResult(response);
+      setView("ntc-result");
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+
+    } catch {
+      setError(
+        "We couldn't process your NTC application right now. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  // ============================================================
+  // EMI CALCULATOR
+  // ============================================================
+
+  const openCalculator = () => {
+    setError(null);
+    setView("calculator");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+
+  // ============================================================
+  // RESET
+  // ============================================================
+
+  const reset = () => {
+
+    setResult(null);
+    setNtcResult(null);
+    setError(null);
+
+    setView("welcome");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+
+  // ============================================================
+  // UI
+  // ============================================================
 
   return (
     <main className="app-shell">
+
+      {/* ======================================================
+          HEADER
+      ====================================================== */}
+
       <header className="topbar">
+
         <button
           type="button"
           className="brand brand-button"
@@ -83,7 +220,12 @@ export default function App() {
           <BrandLogo />
         </button>
 
-        <nav className="desktop-nav" aria-label="Main navigation">
+
+        <nav
+          className="desktop-nav"
+          aria-label="Main navigation"
+        >
+
           <button
             type="button"
             className="nav-link-btn"
@@ -91,19 +233,42 @@ export default function App() {
           >
             EMI Calculator
           </button>
-          <a href="#how-it-works" onClick={() => view !== "welcome" && reset()}>
+
+          <a
+            href="#how-it-works"
+            onClick={() => {
+              if (view !== "welcome") {
+                reset();
+              }
+            }}
+          >
             How it works
           </a>
-          <a href="#credit-guide" onClick={() => view !== "welcome" && reset()}>
+
+          <a
+            href="#credit-guide"
+            onClick={() => {
+              if (view !== "welcome") {
+                reset();
+              }
+            }}
+          >
             Credit guide
           </a>
+
         </nav>
 
+
         <div className="header-actions">
+
           <span className="security-badge">
             <ShieldIcon />
-            <span>Secure &amp; Private</span>
+            <span>
+              Secure &amp; Private
+            </span>
           </span>
+
+
           <button
             type="button"
             className="header-cta"
@@ -111,82 +276,129 @@ export default function App() {
           >
             Check eligibility
           </button>
+
         </div>
+
       </header>
 
+
+      {/* ======================================================
+          MAIN
+      ====================================================== */}
+
       <div className="main-container">
+
+        {/* ====================================================
+            WELCOME
+        ==================================================== */}
+
         {view === "welcome" && (
           <WelcomeDashboard
             onStart={startAssessment}
-            onKnowScore={startAssessment}
-            onContinueAfterCibil={startAssessment}
-            onOpenCalculator={openCalculator}
+
+            /*
+             * Existing "I know my score" flow.
+             * KEEPING THIS AS THE ORIGINAL LOAN FLOW.
+             */
+            onKnowScore={
+              startAssessment
+            }
+
+            /*
+             * NTC flow.
+             */
+            onContinueAfterCibil={
+              startNTCAssessment
+            }
+
+            onOpenCalculator={
+              openCalculator
+            }
           />
         )}
+
+
+        {/* ====================================================
+            EXISTING LOAN ASSESSMENT
+        ==================================================== */}
+
+        {view === "assessment" && (
+          <LoanForm
+            onSubmit={handlePrediction}
+            loading={loading}
+          />
+        )}
+
+
+        {/* ====================================================
+            NTC ASSESSMENT
+        ==================================================== */}
+
+        {view === "ntc-assessment" && (
+          <NTCForm
+            onSubmit={
+              handleNTCPrediction
+            }
+            loading={loading}
+          />
+        )}
+
+
+        {/* ====================================================
+            EXISTING LOAN RESULT
+        ==================================================== */}
+
+        {view === "result" &&
+          result && (
+            <PredictionResult
+              result={result}
+              onReset={reset}
+            />
+          )}
+
+
+        {/* ====================================================
+            NTC RESULT
+        ==================================================== */}
+
+        {view === "ntc-result" &&
+          ntcResult && (
+            <PredictionResult
+              result={ntcResult}
+              onReset={reset}
+            />
+          )}
+
+
+        {/* ====================================================
+            EMI CALCULATOR
+        ==================================================== */}
 
         {view === "calculator" && (
           <EmiCalculator
             onBack={reset}
-            onStartAssessment={startAssessment}
+            onStartAssessment={
+              startAssessment
+            }
           />
         )}
 
-        {view === "assessment" && (
-          <>
-            <section className="assessment-intro">
-              <span>SMART LOAN ELIGIBILITY</span>
-              <h1>Your eligibility assessment</h1>
-              <p>
-                Answer seven short questions. Your CIBIL score is used as one model input, not as a
-                guarantee of any outcome.
-              </p>
-            </section>
-            <section className="assessment-wrapper">
-              <div className="assessment-card">
-                <header className="assessment-header">
-                  <div>
-                    <span className="assessment-eyebrow">LOAN ASSESSMENT</span>
-                    <h2>Let's understand your profile</h2>
-                  </div>
-                  <div className="assessment-icon" aria-hidden="true">⌁</div>
-                </header>
-                <LoanForm onSubmit={handlePrediction} loading={loading} />
-                {loading && (
-                  <div className="analysis-state" role="status">
-                    <span className="analysis-spinner" />
-                    <div>
-                      <strong>Analyzing your information</strong>
-                      <p>Preparing your model assessment. This may take a moment.</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </section>
-            {error && (
-              <div className="global-error" role="alert">
-                <span>!</span>
-                <div>
-                  {error}
-                  <button type="button" onClick={() => setError(null)}>
-                    Dismiss
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
+
+        {/* ====================================================
+            ERROR
+        ==================================================== */}
+
+        {error && (
+          <div
+            className="error-message"
+            role="alert"
+          >
+            {error}
+          </div>
         )}
 
-        {view === "result" && result && (
-          <PredictionResult result={result} onReset={reset} />
-        )}
       </div>
 
-      <footer className="app-footer">
-        <ShieldIcon />
-        <span>Your information is processed securely for this assessment</span>
-        <span className="footer-dot">•</span>
-        <span>Model-based guidance, not a lender decision</span>
-      </footer>
     </main>
   );
 }
