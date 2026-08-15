@@ -36,6 +36,7 @@ function ShieldIcon() {
 export default function App() {
   const [view, setView] = useState<View>("welcome");
   const [result, setResult] = useState<PredictionResponse | null>(null);
+  const [application, setApplication] = useState<LoanApplication | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,11 +52,12 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handlePrediction = async (application: LoanApplication) => {
+  const handlePrediction = async (app: LoanApplication) => {
     try {
       setLoading(true);
       setError(null);
-      setResult(await predictLoan(application));
+      setApplication(app);
+      setResult(await predictLoan(app));
       setView("result");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
@@ -67,6 +69,7 @@ export default function App() {
 
   const reset = () => {
     setResult(null);
+    setApplication(null);
     setError(null);
     setView("welcome");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -181,8 +184,8 @@ export default function App() {
           </>
         )}
 
-        {view === "result" && result && (
-          <PredictionResult result={result} onReset={reset} />
+        {view === "result" && result && application && (
+          <PredictionResult result={result} initialApplication={application} onReset={reset} />
         )}
 
         {view === "model-performance" && (

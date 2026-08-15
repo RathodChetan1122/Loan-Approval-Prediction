@@ -8,11 +8,21 @@ interface WelcomeDashboardProps {
   onOpenCalculator?: () => void;
 }
 
-const features = [
-  ["⌁", "Smart eligibility prediction", "Understand your predicted eligibility from the financial information you provide."],
-  ["◔", "CIBIL guidance", "Check your score securely with the official CIBIL website when you need it."],
-  ["✦", "Personalized insights", "See model-based probabilities and useful next steps after your assessment."],
-];
+const ModelPerformanceIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 3v18h18"/>
+    <path d="M18 9l-5 5-4-4-4 4"/>
+    <circle cx="18" cy="9" r="2" fill="currentColor"/>
+  </svg>
+);
+
+const CibilLogoIcon = () => (
+  <svg width="64" height="24" viewBox="0 0 70 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="2" width="16" height="16" rx="2" fill="#00A6CE" />
+    <text x="3" y="14" fill="white" fontSize="11" fontWeight="bold" fontFamily="sans-serif">tu</text>
+    <text x="21" y="15" fill="#005A9E" fontSize="15" fontWeight="900" fontFamily="sans-serif" letterSpacing="0.5">CIBIL</text>
+  </svg>
+);
 
 export default function WelcomeDashboard({
   onStart,
@@ -53,14 +63,30 @@ export default function WelcomeDashboard({
       <div className="cibil-return"><span>After checking your score, return here and enter it in the assessment.</span><button type="button" onClick={onContinueAfterCibil}>I have my score — Continue →</button></div>
     </section>
 
-    {/* Financial Tools Section / EMI Calculator Card */}
-    {onOpenCalculator && (
-      <section className="tools-section" id="financial-tools" aria-labelledby="tools-title">
-        <div className="section-copy">
-          <span>FINANCIAL UTILITIES</span>
-          <h2 id="tools-title">Estimate your monthly commitments</h2>
-          <p>Plan your loan repayment with our accurate reducing-balance EMI calculator before submitting your application.</p>
-        </div>
+    <section className="feature-section" id="how-it-works" aria-labelledby="feature-title">
+      <div className="section-copy"><span>BUILT FOR CLARITY</span><h2>Everything you need before applying</h2><p>A simple, transparent experience designed to help you prepare—not to promise a lender decision.</p></div>
+      <div className="feature-grid">
+        <article className="feature-card" style={{ animationDelay: `0ms`, cursor: 'pointer', border: '1px solid var(--primary)' }} onClick={onViewPerformance}>
+          <span><ModelPerformanceIcon /></span>
+          <h3>Model Performance</h3>
+          <p>Explore the accuracy, feature importance, and transparency insights behind the LoanWise prediction model.</p>
+          <span style={{display: 'inline-block', marginTop: '12px', background: 'transparent', color: 'var(--primary)', fontSize: '12px', padding: 0, fontWeight: 700}}>View Model Performance →</span>
+        </article>
+
+        <article className="feature-card" style={{ animationDelay: `80ms`, cursor: 'pointer' }} onClick={() => window.open('https://www.cibil.com/freecibilscore', '_blank', 'noopener,noreferrer')}>
+          <span style={{ padding: '0', background: 'transparent' }}><CibilLogoIcon /></span>
+          <h3>CIBIL guidance</h3>
+          <p>Check your score securely with the official CIBIL website when you need it.</p>
+        </article>
+
+        <article className="feature-card" style={{ animationDelay: `160ms` }}>
+          <span>✦</span>
+          <h3>Personalized insights</h3>
+          <p>See model-based probabilities and useful next steps after your assessment.</p>
+        </article>
+      </div>
+
+      {onOpenCalculator && (
         <div className="tool-banner">
           <div className="tool-banner-content">
             <span className="tool-icon" aria-hidden="true">₹</span>
@@ -73,15 +99,7 @@ export default function WelcomeDashboard({
             Open EMI Calculator <span>→</span>
           </button>
         </div>
-      </section>
-    )}
-
-    <section className="feature-section" id="how-it-works" aria-labelledby="feature-title">
-      <div className="section-copy"><span>BUILT FOR CLARITY</span><h2>Everything you need before applying</h2><p>A simple, transparent experience designed to help you prepare—not to promise a lender decision.</p></div>
-      <div className="feature-grid">
-        {features.map(([icon, title, description], index) => <article className="feature-card" key={title} style={{ animationDelay: `${index * 80}ms` }}><span>{icon}</span><h3>{title}</h3><p>{description}</p></article>)}
-        <article className="feature-card" style={{ animationDelay: `240ms`, cursor: 'pointer', border: '1px solid var(--primary)' }} onClick={onViewPerformance}><span>📊</span><h3>Model Performance</h3><p>Explore the accuracy, feature importance, and transparency insights behind the LoanWise prediction model.</p><span style={{display: 'inline-block', marginTop: '12px', background: 'transparent', color: 'var(--primary)', fontSize: '12px', padding: 0, fontWeight: 700}}>View Model Performance →</span></article>
-      </div>
+      )}
     </section>
 
     <section className="process-section" aria-labelledby="process-title">
