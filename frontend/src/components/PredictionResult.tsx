@@ -154,6 +154,21 @@ export default function PredictionResult({
           Loan eligibility result
         </h1>
 
+        {isNTCResult(result) && (
+          <div
+            style={{
+              textAlign: "center",
+              fontSize: "13px",
+              fontWeight: 700,
+              color: "#7b8794",
+              marginTop: "-8px",
+              marginBottom: "12px",
+            }}
+          >
+            *Approximate assessment
+          </div>
+        )}
+
         <strong className="decision-title">
           {isApproved
             ? "LIKELY ELIGIBLE"
