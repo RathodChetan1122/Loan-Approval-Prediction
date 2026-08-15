@@ -1,11 +1,24 @@
 import { useState, useEffect, useMemo } from "react";
-import type { PredictionResponse, LoanApplication } from "../types/loan";
+import type {
+  PredictionResponse,
+  NTCPredictionResponse,
+  LoanApplication,
+} from "../types/loan";
 import { predictLoan } from "../services/api";
 
 interface Props { 
-  result: PredictionResponse; 
+  result: PredictionResponse | NTCPredictionResponse; 
   initialApplication?: LoanApplication;
   onReset: () => void;
+}
+
+function isNTCResult(
+  result: PredictionResponse | NTCPredictionResponse
+): result is NTCPredictionResponse {
+  return (
+    "shap_explanation" in result &&
+    Array.isArray(result.shap_explanation)
+  );
 }
 
 export default function PredictionResult({ result, initialApplication, onReset }: Props) {
@@ -13,11 +26,20 @@ export default function PredictionResult({ result, initialApplication, onReset }
   const rejected = result.rejected_probability * 100;
   const isApproved = result.prediction === "Approved";
   const decisionProbability = isApproved ? approved : rejected;
-
+  
+  const ntcFactors = isNTCResult(result)
+  ? [...result.shap_explanation]
+      .sort(
+        (a, b) =>
+          Math.abs(b.impact) -
+          Math.abs(a.impact)
+      )
+      .slice(0, 3)
+  : [];
   const [simulatedAmount, setSimulatedAmount] = useState(initialApplication?.loan_amount || 50000);
   const [simulatedTenure, setSimulatedTenure] = useState(initialApplication?.loan_tenure || 12);
   const [simulationResponse, setSimulationResponse] = useState<{
-    result: PredictionResponse;
+    result: PredictionResponse | NTCPredictionResponse;
     amount: number;
     tenure: number;
   } | null>(null);
@@ -66,7 +88,7 @@ export default function PredictionResult({ result, initialApplication, onReset }
     <section className={`result-page ${isApproved ? "result-approved" : "result-rejected"}`}>
       <div className="decision-card">
         <div className="result-kicker">MODEL PREDICTION</div>
-        <div className="decision-icon" aria-hidden="true">{isApproved ? "✓" : "×"}</div>
+        <div className="decision-icon" aria-hidden="true">{isApproved ? "✓" : "✕"}</div>
         <h1>Loan eligibility result</h1>
         <strong className="decision-title">{isApproved ? "LIKELY ELIGIBLE" : "PREDICTED NOT ELIGIBLE"}</strong>
         <p>{isApproved ? "Based on the information provided, the model estimates a strong likelihood of loan eligibility." : "Based on the information provided, the model estimates a lower likelihood of loan eligibility right now."}</p>
@@ -105,7 +127,69 @@ export default function PredictionResult({ result, initialApplication, onReset }
           ))}
         </div>
       </div>
+{isNTCResult(result) && (
+  <section
+    className="insights-panel"
+    aria-labelledby="ntc-insights-title"
+  >
+    <header>
+      <span className="guide-icon">✦</span>
 
+      <div>
+        <p id="ntc-insights-title">
+          Why the model made this prediction
+        </p>
+
+        <small>
+          These are the strongest factors that
+          influenced this NTC assessment.
+        </small>
+      </div>
+    </header>
+
+    <div className="insights-grid">
+      {ntcFactors.map((factor) => (
+        <article
+          key={factor.feature}
+          className="insight-card"
+        >
+          <span>
+            {factor.impact >= 0 ? "↑" : "↓"}
+          </span>
+
+          <div>
+            <strong>
+              {factor.feature
+                .replace(
+                  "remainder__",
+                  ""
+                )
+                .replaceAll("_", " ")}
+            </strong>
+
+            <small>
+              {factor.impact >= 0
+                ? "Positive influence"
+                : "Negative influence"}
+            </small>
+          </div>
+
+          <b>
+            {factor.impact >= 0 ? "+" : ""}
+            {factor.impact.toFixed(3)}
+          </b>
+        </article>
+      ))}
+    </div>
+
+    <p className="guide-note">
+      SHAP values explain the direction and relative
+      strength of each feature's contribution. They
+      are model explanations, not guarantees of
+      approval or rejection.
+    </p>
+  </section>
+)}
       {initialApplication && (
         <section className="simulator-panel" aria-labelledby="simulator-title">
           <header>
@@ -198,3 +282,6 @@ export default function PredictionResult({ result, initialApplication, onReset }
     </section>
   );
 }
+
+
+

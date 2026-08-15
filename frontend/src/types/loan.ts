@@ -44,3 +44,38 @@ export interface ValidationResponse {
 
   data: LoanApplication;
 }
+export interface NTCApplication {
+  dependents: number;
+
+  employment_type:
+    | "Private"
+    | "Government"
+    | "Self-Employed"
+    | "Unemployed"
+    | "Skilled Labor";
+
+  annual_income: number;
+
+  loan_amount: number;
+
+  loan_tenure: number;
+
+  education:
+    | "Graduate"
+    | "Post Graduate"
+    | "PhD"
+    | "High School"
+    | "Diploma"
+    | "No Formal";
+}
+
+export interface NTCShapExplanation {
+  feature: string;
+  impact: number;
+}
+
+export interface NTCPredictionResponse
+  extends PredictionResponse {
+  confidence: number;
+  shap_explanation: NTCShapExplanation[];
+}
