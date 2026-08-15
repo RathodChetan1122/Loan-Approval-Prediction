@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import type {
   ChatMessage,
@@ -9,64 +9,57 @@ import { sendAssistantMessage, fetchAssistantSuggestions } from "../services/api
 
 interface AiLoanAssistantProps {
   onBack: () => void;
-  onStartAssessment?: () => void;
-  onOpenCalculator?: () => void;
   applicationContext?: LoanApplication | null;
 }
 
+// Lighthearted, funny, clean greeting with NO loan information dump
 const INITIAL_MESSAGE: ChatMessage = {
   id: "welcome-1",
   role: "assistant",
-  content: `👋 **Welcome to the AI Loan Assistant!**\n\nI am your intelligent financial advisor powered by Google AI. I can help you with:\n- **Loan Approval Insights**: How banks assess eligibility, DTI ratios, and approval odds.\n- **CIBIL & Credit Score**: Proven strategies to boost your score to 750+ and fix credit issues.\n- **EMI & Tenure Optimization**: Smart borrowing, prepayment strategies, and interest reduction.\n- **Documentation**: KYC, ITR, and verification requirements for salaried & self-employed borrowers.\n\n*Type your question below or click any of the suggested topics to get started!*`,
+  content: `Beep boop! 🤖 Hey there! I'm your AI buddy with zero judgment and all the answers.\n\nWhether you're planning your next big move, deciphering mysterious credit numbers, or just wondering where all your money went this month—I've got your back! What's on your mind today?`,
   timestamp: Date.now(),
-  suggestions: [
-    "How can I improve my CIBIL score to 750+?",
-    "What are the top reasons for loan rejection?",
-    "How do banks calculate maximum loan eligibility?",
-    "What documents are needed for salaried loan approval?"
-  ]
 };
 
-const DEFAULT_CATEGORIZED_PROMPTS: SuggestedPrompt[] = [
+const POPULAR_TOPICS: SuggestedPrompt[] = [
   {
     title: "Loan Eligibility Formula",
     prompt: "How do banks calculate my maximum loan eligibility and allowable EMI?",
-    category: "Loan Approval Queries",
+    category: "Loan Approval",
   },
   {
-    title: "Avoid Loan Rejection",
+    title: "Avoid Rejection Triggers",
     prompt: "What are the most common reasons for loan rejection and how can I avoid them?",
-    category: "Loan Approval Queries",
+    category: "Loan Approval",
   },
   {
-    title: "Debt-to-Income (DTI) Ratio",
-    prompt: "What is Debt-to-Income (DTI) ratio and how does it affect my loan approval odds?",
-    category: "Loan Approval Queries",
+    title: "Debt-to-Income (DTI) Impact",
+    prompt: "What is Debt-to-Income (DTI) ratio and how does it affect my approval odds?",
+    category: "Loan Approval",
   },
   {
-    title: "Required Loan Documents",
+    title: "Required Documents",
     prompt: "What documents are required for quick salaried and self-employed loan approval?",
-    category: "Loan Approval Queries",
+    category: "Loan Approval",
   },
   {
-    title: "Boost CIBIL Score to 750+",
+    title: "Boost CIBIL to 750+",
     prompt: "How can I improve my CIBIL score from 650 to 750+ step-by-step?",
-    category: "Credit Score Queries",
+    category: "Credit Score",
   },
   {
     title: "Credit Score Check Myth",
     prompt: "Does checking my own CIBIL score frequently reduce my credit rating?",
-    category: "Credit Score Queries",
+    category: "Credit Score",
   },
   {
-    title: "Ideal Score for Loans",
-    prompt: "What is the minimum credit score required for personal loans vs home loans in India?",
-    category: "Credit Score Queries",
+    title: "Minimum Score for Loans",
+    prompt: "What is the minimum credit score required for personal loans vs home loans?",
+    category: "Credit Score",
   },
   {
     title: "Recover from Late Payments",
     prompt: "How do late EMI or credit card payments affect my credit report and how long does recovery take?",
-    category: "Credit Score Queries",
+    category: "Credit Score",
   },
   {
     title: "Tenure vs EMI Optimization",
@@ -75,26 +68,42 @@ const DEFAULT_CATEGORIZED_PROMPTS: SuggestedPrompt[] = [
   },
   {
     title: "Employment Type Impact",
-    prompt: "How does employment type (Government, Private, Self-Employed) influence loan approval and interest rates?",
+    prompt: "How does employment type (Government, Private, Self-Employed) influence interest rates?",
     category: "EMI & Planning",
   }
+];
+
+const HORIZONTAL_QUICK_SUGGESTIONS = [
+  "How to boost CIBIL score to 750+?",
+  "Why do loans get rejected?",
+  "What is the ideal DTI ratio?",
+  "What documents do I need to apply?",
+  "How do banks calculate maximum EMI?",
+  "Does checking my credit score lower it?",
+  "Longer tenure vs higher EMI?",
+  "How does employment type affect loans?"
 ];
 
 function SparklesIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/>
-      <path d="M5 3v4"/>
-      <path d="M3 5h4"/>
-      <path d="M19 17v4"/>
-      <path d="M17 19h4"/>
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8"/>
+      <path d="m21 21-4.3-4.3"/>
     </svg>
   );
 }
 
 function CopyIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
       <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
     </svg>
@@ -103,7 +112,7 @@ function CopyIcon() {
 
 function CheckIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 6 9 17 4 12"/>
     </svg>
   );
@@ -111,14 +120,23 @@ function CheckIcon() {
 
 function SendIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="m22 2-7 20-4-9-9-4Z"/>
       <path d="M22 2 11 13"/>
     </svg>
   );
 }
 
-// Simple markdown formatter helper to render clean structured text without external heavy parser
+function TrashIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 6h18"/>
+      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+    </svg>
+  );
+}
+
 function FormattedContent({ content }: { content: string }) {
   const lines = content.split("\n");
   
@@ -130,7 +148,6 @@ function FormattedContent({ content }: { content: string }) {
           return <div key={idx} className="md-spacer" />;
         }
         
-        // Headings
         if (trimmed.startsWith("### ")) {
           return <h3 key={idx} className="md-h3">{trimmed.replace("### ", "")}</h3>;
         }
@@ -141,7 +158,6 @@ function FormattedContent({ content }: { content: string }) {
           return <h2 key={idx} className="md-h2">{trimmed.replace("## ", "")}</h2>;
         }
 
-        // Bullet point
         if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
           const itemText = trimmed.substring(2);
           return (
@@ -152,7 +168,6 @@ function FormattedContent({ content }: { content: string }) {
           );
         }
 
-        // Numbered list
         const numMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
         if (numMatch) {
           return (
@@ -163,10 +178,9 @@ function FormattedContent({ content }: { content: string }) {
           );
         }
 
-        // Table row or separator
         if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
           if (trimmed.includes("---")) {
-            return null; // separator
+            return null;
           }
           const cells = trimmed.split("|").filter((_, i, arr) => i > 0 && i < arr.length - 1);
           return (
@@ -187,13 +201,11 @@ function FormattedContent({ content }: { content: string }) {
 }
 
 function parseInlineStyles(text: string) {
-  // Parse **bold** and *italic* and `code`
   const parts: (string | React.ReactNode)[] = [];
   let remaining = text;
   let keyIdx = 0;
 
   while (remaining.length > 0) {
-    // Check **bold**
     const boldMatch = remaining.match(/\*\*(.*?)\*\*/);
     if (boldMatch && boldMatch.index !== undefined) {
       if (boldMatch.index > 0) {
@@ -204,7 +216,6 @@ function parseInlineStyles(text: string) {
       continue;
     }
 
-    // Check `code`
     const codeMatch = remaining.match(/`([^`]+)`/);
     if (codeMatch && codeMatch.index !== undefined) {
       if (codeMatch.index > 0) {
@@ -215,7 +226,6 @@ function parseInlineStyles(text: string) {
       continue;
     }
 
-    // Check *italic*
     const italicMatch = remaining.match(/\*([^*]+)\*/);
     if (italicMatch && italicMatch.index !== undefined) {
       if (italicMatch.index > 0) {
@@ -226,7 +236,6 @@ function parseInlineStyles(text: string) {
       continue;
     }
 
-    // Append rest
     parts.push(remaining);
     break;
   }
@@ -236,43 +245,31 @@ function parseInlineStyles(text: string) {
 
 export default function AiLoanAssistant({
   onBack,
-  onStartAssessment,
-  onOpenCalculator,
   applicationContext,
 }: AiLoanAssistantProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [inputQuery, setInputQuery] = useState("");
+  const [quickSearch, setQuickSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [suggestedPrompts, setSuggestedPrompts] = useState<SuggestedPrompt[]>(DEFAULT_CATEGORIZED_PROMPTS);
-  const [categories, setCategories] = useState<string[]>([
-    "All",
-    "Loan Approval Queries",
-    "Credit Score Queries",
-    "EMI & Planning",
-  ]);
+  const [showPopular, setShowPopular] = useState(true);
+  const [dynamicPrompts, setDynamicPrompts] = useState<SuggestedPrompt[]>(POPULAR_TOPICS);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const quickChipsRef = useRef<HTMLDivElement>(null);
 
-  // Fetch dynamic suggestions on load
   useEffect(() => {
     fetchAssistantSuggestions()
       .then((data) => {
-        if (data.categories && data.categories.length > 0) {
-          setCategories(["All", ...data.categories]);
-        }
         if (data.suggestions && data.suggestions.length > 0) {
-          setSuggestedPrompts(data.suggestions);
+          setDynamicPrompts(data.suggestions);
         }
       })
-      .catch(() => {
-        // Use defaults if backend offline
-      });
+      .catch(() => {});
   }, []);
 
-  // Auto scroll to bottom of chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
@@ -294,7 +291,6 @@ export default function AiLoanAssistant({
     setIsLoading(true);
 
     try {
-      // Build conversation history payload
       const historyPayload = newMessages
         .filter((m) => !m.isError && m.id !== "welcome-1")
         .slice(-6)
@@ -330,13 +326,9 @@ export default function AiLoanAssistant({
       const errorMessage: ChatMessage = {
         id: `err-${Date.now()}`,
         role: "assistant",
-        content: "⚠️ **We encountered a temporary connection issue.** Please verify your network or try asking again in a moment.",
+        content: "Oops! We encountered a slight network hiccup. Please try asking again in a moment.",
         timestamp: Date.now(),
         isError: true,
-        suggestions: [
-          "How can I improve my CIBIL credit score?",
-          "What are common reasons for loan rejection?",
-        ]
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -359,6 +351,14 @@ export default function AiLoanAssistant({
     handleSendMessage();
   };
 
+  const handleQuickSearchSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (quickSearch.trim()) {
+      handleSendMessage(quickSearch);
+      setQuickSearch("");
+    }
+  };
+
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
@@ -369,90 +369,104 @@ export default function AiLoanAssistant({
     setMessages([INITIAL_MESSAGE]);
   };
 
-  const filteredPrompts = selectedCategory === "All"
-    ? suggestedPrompts
-    : suggestedPrompts.filter((p) => p.category === selectedCategory);
+  // Filtered popular topics based on category and quickSearch
+  const filteredPopularTopics = useMemo(() => {
+    return dynamicPrompts.filter((p) => {
+      const matchesCategory = selectedCategory === "All" || p.category.toLowerCase().includes(selectedCategory.toLowerCase());
+      const matchesSearch = !quickSearch.trim() || 
+        p.title.toLowerCase().includes(quickSearch.toLowerCase()) || 
+        p.prompt.toLowerCase().includes(quickSearch.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [dynamicPrompts, selectedCategory, quickSearch]);
+
+  const categoriesList = ["All", "Loan Approval", "Credit Score", "EMI & Planning"];
 
   return (
-    <div className="assistant-container">
-      {/* Header Bar */}
-      <header className="assistant-header-bar">
-        <div className="assistant-header-left">
+    <div className="fresh-assistant-container">
+      {/* Sleek Minimal Header */}
+      <header className="fresh-assistant-header">
+        <div className="header-brand-side">
           <button
             type="button"
-            className="assistant-back-btn"
+            className="fresh-back-btn"
             onClick={onBack}
             aria-label="Back to home"
           >
             ← Back
           </button>
-          <div className="assistant-title-block">
-            <div className="assistant-name-row">
-              <span className="assistant-avatar-badge">
-                <SparklesIcon />
-              </span>
-              <h1>AI Loan Assistant</h1>
-              <span className="assistant-live-pill">Google AI Powered</span>
-            </div>
-            <p className="assistant-subtitle">
-              Instant personalized guidance on loan approvals, CIBIL credit scores, EMI calculations &amp; eligibility.
-            </p>
+          <div className="fresh-title-badge">
+            <span className="fresh-spark-icon">
+              <SparklesIcon />
+            </span>
+            <h2>AI Loan Assistant</h2>
           </div>
         </div>
 
-        <div className="assistant-header-actions">
-          {onStartAssessment && (
+        {/* Quick Search Option Beside Title */}
+        <form className="fresh-quick-search" onSubmit={handleQuickSearchSubmit}>
+          <SearchIcon />
+          <input
+            type="text"
+            placeholder="Quick search topic or ask..."
+            value={quickSearch}
+            onChange={(e) => setQuickSearch(e.target.value)}
+          />
+          {quickSearch && (
             <button
               type="button"
-              className="assistant-secondary-action"
-              onClick={onStartAssessment}
+              className="quick-search-clear"
+              onClick={() => setQuickSearch("")}
             >
-              Check Eligibility Assessment →
+              ✕
             </button>
           )}
-          {onOpenCalculator && (
-            <button
-              type="button"
-              className="assistant-secondary-action-outline"
-              onClick={onOpenCalculator}
-            >
-              ₹ EMI Calculator
-            </button>
-          )}
+        </form>
+
+        <div className="header-tools-side">
           <button
             type="button"
-            className="assistant-clear-btn"
+            className={`popular-toggle-btn ${showPopular ? "active" : ""}`}
+            onClick={() => setShowPopular(!showPopular)}
+            title="Toggle Popular Topics"
+          >
+            Popular Topics
+          </button>
+          <button
+            type="button"
+            className="fresh-clear-btn"
             onClick={handleClearChat}
             title="Reset conversation"
           >
-            Clear Chat
+            <TrashIcon />
+            <span>Clear</span>
           </button>
         </div>
       </header>
 
-      {/* Main Chat Viewport */}
-      <div className="assistant-chat-viewport">
-        <div className="assistant-messages-list">
+      {/* Main Chat Stream Viewport */}
+      <div className="fresh-chat-viewport">
+        <div className="fresh-messages-stream">
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`chat-message-row ${msg.role === "user" ? "user-row" : "assistant-row"}`}
+              className={`fresh-msg-row ${msg.role === "user" ? "msg-user" : "msg-assistant"}`}
             >
               {msg.role === "assistant" && (
-                <div className="assistant-bot-avatar" aria-hidden="true">
+                <div className="fresh-avatar-bot" aria-hidden="true">
                   <SparklesIcon />
                 </div>
               )}
 
-              <div className={`chat-bubble ${msg.role === "user" ? "user-bubble" : "assistant-bubble"} ${msg.isError ? "error-bubble" : ""}`}>
-                <div className="bubble-header">
-                  <span className="bubble-sender">
-                    {msg.role === "user" ? "You" : "AI Loan Assistant"}
+              <div className={`fresh-bubble ${msg.role === "user" ? "bubble-user" : "bubble-bot"} ${msg.isError ? "bubble-error" : ""}`}>
+                <div className="fresh-bubble-top">
+                  <span className="fresh-sender-name">
+                    {msg.role === "user" ? "You" : "Loan Assistant"}
                   </span>
                   {msg.role === "assistant" && (
                     <button
                       type="button"
-                      className="copy-bubble-btn"
+                      className="fresh-copy-btn"
                       onClick={() => handleCopy(msg.id, msg.content)}
                       title="Copy response"
                     >
@@ -469,52 +483,32 @@ export default function AiLoanAssistant({
                   )}
                 </div>
 
-                <div className="bubble-content">
+                <div className="fresh-bubble-text">
                   <FormattedContent content={msg.content} />
                 </div>
-
-                {/* Inline follow-up suggestions for assistant messages */}
-                {msg.suggestions && msg.suggestions.length > 0 && (
-                  <div className="bubble-suggestions">
-                    <span className="suggestions-label">Suggested follow-ups:</span>
-                    <div className="suggestions-chips-row">
-                      {msg.suggestions.map((sug, sIdx) => (
-                        <button
-                          key={sIdx}
-                          type="button"
-                          className="suggestion-chip"
-                          onClick={() => handleSendMessage(sug)}
-                          disabled={isLoading}
-                        >
-                          {sug}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
               {msg.role === "user" && (
-                <div className="user-avatar" aria-hidden="true">
-                  <span>👤</span>
+                <div className="fresh-avatar-user" aria-hidden="true">
+                  👤
                 </div>
               )}
             </div>
           ))}
 
-          {/* Thinking / Loading State */}
+          {/* Clean Typing Indicator */}
           {isLoading && (
-            <div className="chat-message-row assistant-row">
-              <div className="assistant-bot-avatar thinking-avatar" aria-hidden="true">
+            <div className="fresh-msg-row msg-assistant">
+              <div className="fresh-avatar-bot pulse-sparkle" aria-hidden="true">
                 <SparklesIcon />
               </div>
-              <div className="chat-bubble assistant-bubble thinking-bubble">
-                <div className="thinking-dots">
-                  <span className="dot" />
-                  <span className="dot" />
-                  <span className="dot" />
+              <div className="fresh-bubble bubble-bot fresh-thinking-state">
+                <div className="fresh-dots">
+                  <span />
+                  <span />
+                  <span />
                 </div>
-                <span className="thinking-text">LoanWise AI is analyzing your financial query...</span>
+                <span className="fresh-thinking-label">Thinking...</span>
               </div>
             </div>
           )}
@@ -523,58 +517,30 @@ export default function AiLoanAssistant({
         </div>
       </div>
 
-      {/* Categorized Suggestions Section Below Chat */}
-      <section className="assistant-suggestions-panel" aria-label="Suggested loan and credit score queries">
-        <div className="suggestions-panel-header">
-          <div className="panel-heading-group">
-            <span className="panel-tag">POPULAR TOPICS</span>
-            <h3>Quick Financial Guidance Queries</h3>
-            <p>Click any prompt below to ask the AI assistant immediately:</p>
-          </div>
-
-          {/* Category Tabs */}
-          <div className="category-tabs" role="tablist">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                role="tab"
-                aria-selected={selectedCategory === cat}
-                className={`category-tab-btn ${selectedCategory === cat ? "active" : ""}`}
-                onClick={() => setSelectedCategory(cat)}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Categorized Cards Grid */}
-        <div className="prompts-grid">
-          {filteredPrompts.map((item, idx) => (
+      {/* Horizontal Scrollable Suggested Topics Strip directly above input */}
+      <div className="fresh-horizontal-suggestions-wrapper">
+        <div className="suggestions-scroll-container" ref={quickChipsRef}>
+          {HORIZONTAL_QUICK_SUGGESTIONS.map((topic, tIdx) => (
             <button
-              key={idx}
+              key={tIdx}
               type="button"
-              className="prompt-card"
-              onClick={() => handleSendMessage(item.prompt)}
+              className="fresh-topic-chip"
+              onClick={() => handleSendMessage(topic)}
               disabled={isLoading}
             >
-              <div className="prompt-card-category">{item.category}</div>
-              <strong className="prompt-card-title">{item.title}</strong>
-              <p className="prompt-card-text">{item.prompt}</p>
-              <span className="prompt-card-cta">Ask AI →</span>
+              {topic}
             </button>
           ))}
         </div>
-      </section>
+      </div>
 
-      {/* Floating / Pinned Bottom Chat Input Form */}
-      <footer className="assistant-input-tray">
-        <form className="assistant-input-form" onSubmit={handleFormSubmit}>
+      {/* Clean Bottom Search / Query Input Bar */}
+      <footer className="fresh-input-bar">
+        <form className="fresh-form" onSubmit={handleFormSubmit}>
           <textarea
             ref={inputRef}
-            className="assistant-textarea"
-            placeholder="Ask anything about loan eligibility, CIBIL score, EMI, documents, or interest rates... (Press Enter to send)"
+            className="fresh-textarea"
+            placeholder="Type your question here... (Enter to send, Shift+Enter for new line)"
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -583,18 +549,61 @@ export default function AiLoanAssistant({
           />
           <button
             type="submit"
-            className="assistant-send-btn"
+            className="fresh-send-btn"
             disabled={!inputQuery.trim() || isLoading}
-            aria-label="Send query"
+            aria-label="Send message"
           >
-            <span>Send</span>
+            <span>Ask</span>
             <SendIcon />
           </button>
         </form>
-        <div className="input-footer-note">
-          <span>AI model provides educational &amp; financial planning guidance. Official approvals depend on bank underwriting.</span>
-        </div>
       </footer>
+
+      {/* Clean & Fresh "Popular Topics" Section at the bottom */}
+      {showPopular && (
+        <section className="fresh-popular-section" aria-label="Popular financial topics">
+          <div className="popular-header-row">
+            <div className="popular-title-wrap">
+              <span className="popular-kicker">DISCOVER</span>
+              <h3>Popular Topics</h3>
+            </div>
+
+            {/* Category Filter Tabs */}
+            <div className="popular-tabs" role="tablist">
+              {categoriesList.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  role="tab"
+                  aria-selected={selectedCategory === cat}
+                  className={`popular-tab-chip ${selectedCategory === cat ? "active" : ""}`}
+                  onClick={() => setSelectedCategory(cat)}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Clean Grid of Cards */}
+          <div className="popular-cards-grid">
+            {filteredPopularTopics.map((item, idx) => (
+              <button
+                key={idx}
+                type="button"
+                className="popular-card"
+                onClick={() => handleSendMessage(item.prompt)}
+                disabled={isLoading}
+              >
+                <div className="popular-card-category">{item.category}</div>
+                <strong className="popular-card-heading">{item.title}</strong>
+                <p className="popular-card-desc">{item.prompt}</p>
+                <span className="popular-card-action">Ask →</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

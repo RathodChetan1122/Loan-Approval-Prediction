@@ -150,8 +150,6 @@ export default function App() {
         {view === "assistant" && (
           <AiLoanAssistant
             onBack={reset}
-            onStartAssessment={startAssessment}
-            onOpenCalculator={openCalculator}
             applicationContext={application}
           />
         )}
