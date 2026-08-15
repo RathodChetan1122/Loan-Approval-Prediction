@@ -253,7 +253,7 @@ export default function AiLoanAssistant({
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [showPopular, setShowPopular] = useState(true);
+  const [showPopular, setShowPopular] = useState(false);
   const [dynamicPrompts, setDynamicPrompts] = useState<SuggestedPrompt[]>(POPULAR_TOPICS);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -568,20 +568,31 @@ export default function AiLoanAssistant({
               <h3>Popular Topics</h3>
             </div>
 
-            {/* Category Filter Tabs */}
-            <div className="popular-tabs" role="tablist">
-              {categoriesList.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  role="tab"
-                  aria-selected={selectedCategory === cat}
-                  className={`popular-tab-chip ${selectedCategory === cat ? "active" : ""}`}
-                  onClick={() => setSelectedCategory(cat)}
-                >
-                  {cat}
-                </button>
-              ))}
+            <div className="popular-header-controls">
+              {/* Category Filter Tabs */}
+              <div className="popular-tabs" role="tablist">
+                {categoriesList.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    role="tab"
+                    aria-selected={selectedCategory === cat}
+                    className={`popular-tab-chip ${selectedCategory === cat ? "active" : ""}`}
+                    onClick={() => setSelectedCategory(cat)}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                className="popular-close-btn"
+                onClick={() => setShowPopular(false)}
+                title="Hide popular topics"
+              >
+                ✕
+              </button>
             </div>
           </div>
 

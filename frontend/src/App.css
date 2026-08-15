@@ -893,6 +893,32 @@ button:focus-visible,input:focus-visible { outline:3px solid rgba(35,113,236,.32
   line-height: 1.35;
 }
 
+.popular-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.popular-close-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+  color: var(--muted);
+  font-size: 11px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.popular-close-btn:hover {
+  background: #ffebee;
+  color: #b9404f;
+  border-color: #f0d5d8;
+}
+
 .popular-card-action {
   font-size: 10.5px;
   font-weight: 800;
