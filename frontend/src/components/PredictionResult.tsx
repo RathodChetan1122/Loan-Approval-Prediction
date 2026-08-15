@@ -48,6 +48,7 @@ export default function PredictionResult({ result, initialApplication, onReset }
   const rejected = result.rejected_probability * 100;
   const isApproved = result.prediction === "Approved";
   const decisionProbability = isApproved ? approved : rejected;
+
   const explanation = result.explanation;
 
   const [isDownloading, setIsDownloading] = useState(false);
