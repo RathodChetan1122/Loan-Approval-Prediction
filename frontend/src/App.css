@@ -216,3 +216,57 @@ button:focus-visible,input:focus-visible { outline:3px solid rgba(35,113,236,.32
   .emi-assessment-bridge { flex-direction:column; align-items:flex-start; }
   .bridge-cta-btn { width:100%; justify-content:center; }
 }
+
+/* NTC Explainability & Action Plan System */
+.ntc-section-card { margin:18px 0; padding:26px 28px; border:1px solid var(--border); border-radius:22px; background:#fff; box-shadow:0 8px 24px rgba(29,48,78,.05); animation:feature-in .35s ease both; }
+.ntc-section-header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:18px; }
+.ntc-header-left { max-width:640px; }
+.ntc-section-kicker { display:block; font-size:11px; font-weight:800; letter-spacing:1.1px; color:var(--primary); margin-bottom:4px; text-transform:uppercase; }
+.ntc-section-kicker.positive-kicker { color:#1b7a54; }
+.ntc-section-kicker.action-kicker { color:#245cab; }
+.ntc-section-title { margin:0 0 5px; font-size:19px; letter-spacing:-.4px; color:var(--navy); }
+.ntc-section-subtitle { margin:0; color:var(--muted); font-size:13.5px; line-height:1.5; }
+.ntc-section-subtitle.positive-subtitle { font-size:14px; font-weight:600; color:#3d5069; }
+.ntc-badge-pill { padding:6px 14px; border:1px solid #d3e2f5; border-radius:99px; font-size:12px; font-weight:750; color:var(--primary); background:#f4f8fe; white-space:nowrap; flex-shrink:0; }
+
+.ntc-accordion-list,.ntc-action-list { display:grid; gap:10px; }
+.ntc-accordion-item,.ntc-action-item { border:1.5px solid #e7edf6; border-radius:14px; background:#fafcff; transition:border-color .18s,background .18s,box-shadow .18s; overflow:hidden; }
+.ntc-accordion-item:hover,.ntc-action-item:hover { border-color:#c4d8f2; background:#fff; box-shadow:0 4px 14px rgba(36,92,171,.06); }
+.ntc-accordion-item.open,.ntc-action-item.open { border-color:#b4cff2; background:#fff; box-shadow:0 6px 18px rgba(36,92,171,.08); }
+
+.ntc-accordion-trigger,.ntc-action-trigger { width:100%; display:flex; align-items:center; justify-content:space-between; gap:14px; padding:15px 18px; border:0; background:transparent; cursor:pointer; text-align:left; font-family:inherit; }
+.ntc-trigger-main { display:flex; align-items:center; gap:12px; flex-wrap:wrap; flex:1; }
+.ntc-feature-name { font-size:14.5px; font-weight:750; color:var(--navy); min-width:160px; }
+
+.ntc-influence-tag { font-size:11.5px; font-weight:750; padding:4px 10px; border-radius:99px; }
+.ntc-influence-tag.negative { background:#fff1f3; color:#c43545; border:1px solid #fecfd5; }
+.ntc-influence-tag.positive { background:#eef9f3; color:#187a53; border:1px solid #c7eedc; }
+
+.ntc-applicant-val { font-size:12.5px; color:var(--muted); margin-left:auto; }
+.ntc-applicant-val strong { color:var(--navy); font-weight:750; }
+
+.ntc-chevron { font-size:20px; font-weight:700; color:#8c9eb5; transition:transform .2s cubic-bezier(.4,0,.2,1); display:inline-block; user-select:none; line-height:1; }
+.ntc-chevron.rotated { transform:rotate(90deg); color:var(--primary); }
+
+.ntc-accordion-body,.ntc-action-body { padding:0 18px 16px; color:#42526e; font-size:13.5px; line-height:1.55; border-top:1px solid #f1f5fa; margin-top:2px; padding-top:13px; animation:help-in .2s ease; }
+.ntc-matters-kicker { font-size:10.5px; font-weight:800; letter-spacing:.8px; color:#708299; text-transform:uppercase; margin-bottom:5px; }
+.ntc-accordion-body p { margin:0; }
+
+.ntc-action-badge { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:var(--primary-soft); color:var(--primary); font-size:13px; font-weight:850; flex-shrink:0; }
+.ntc-action-headings { flex:1; }
+.ntc-action-topic { font-size:11px; font-weight:800; color:#72849c; letter-spacing:.5px; text-transform:uppercase; margin-bottom:2px; }
+.ntc-action-summary { font-size:14.5px; font-weight:750; color:var(--navy); }
+.ntc-rec-text { margin:0 0 9px; font-weight:600; color:#2c3e55; }
+.ntc-details-list { margin:0; padding-left:18px; display:grid; gap:5px; color:#53657d; font-size:12.5px; }
+
+.ntc-notice-box { margin-top:18px; padding:18px 22px; border:1px solid #dce6f2; border-radius:16px; background:#f7faff; color:#50637c; font-size:12.5px; line-height:1.55; }
+.ntc-notice-header { display:flex; align-items:center; gap:8px; margin-bottom:6px; color:var(--navy); font-size:11.5px; font-weight:800; letter-spacing:.8px; }
+.ntc-notice-icon { display:grid; place-items:center; width:20px; height:20px; border-radius:50%; background:var(--primary); color:#fff; font-size:11px; font-weight:800; }
+.ntc-notice-box p { margin:0; }
+
+@media (max-width:700px) {
+  .ntc-section-card { padding:20px 16px; border-radius:18px; }
+  .ntc-trigger-main { flex-direction:column; align-items:flex-start; gap:6px; }
+  .ntc-applicant-val { margin-left:0; }
+  .ntc-badge-pill { display:none; }
+}

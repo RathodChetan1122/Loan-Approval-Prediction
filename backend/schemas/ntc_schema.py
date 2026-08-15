@@ -52,11 +52,36 @@ class NTCApplication(BaseModel):
         return value
 
 
+class NTCFactorItem(BaseModel):
+    feature: str
+    feature_name: str
+    influence: str
+    applicant_value: str
+    explanation: str
+
+
+class NTCActionItem(BaseModel):
+    step: str
+    feature: str
+    title: str
+    action_title: str
+    recommendation: str
+    details: list[str] = []
+
+
 class NTCPredictionResponse(BaseModel):
     prediction: str
+
+    confidence: float
 
     approved_probability: float
 
     rejected_probability: float
 
-    suggestions: list[str]
+    negative_factors: list[NTCFactorItem] = []
+
+    positive_factors: list[NTCFactorItem] = []
+
+    action_plan: list[NTCActionItem] = []
+
+    suggestions: list[str] = []

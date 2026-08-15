@@ -69,13 +69,26 @@ export interface NTCApplication {
     | "No Formal";
 }
 
-export interface NTCShapExplanation {
+export interface NTCFactorItem {
   feature: string;
-  impact: number;
+  feature_name: string;
+  influence: string;
+  applicant_value: string;
+  explanation: string;
 }
 
-export interface NTCPredictionResponse
-  extends PredictionResponse {
+export interface NTCActionItem {
+  step: string;
+  feature: string;
+  title: string;
+  action_title: string;
+  recommendation: string;
+  details: string[];
+}
+
+export interface NTCPredictionResponse extends PredictionResponse {
   confidence: number;
-  shap_explanation: NTCShapExplanation[];
+  negative_factors?: NTCFactorItem[];
+  positive_factors?: NTCFactorItem[];
+  action_plan?: NTCActionItem[];
 }
