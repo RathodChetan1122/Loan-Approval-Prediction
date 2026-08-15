@@ -8,31 +8,45 @@ import type {
     NTCPredictionResponse,
 } from "../types/loan";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-if (!API_BASE_URL) {
-    throw new Error(
-        "VITE_API_BASE_URL is not configured. Please configure the frontend API URL."
-    );
-}
+const PRIMARY_API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const FALLBACK_API_URL = PRIMARY_API_URL.includes("8000")
+  ? "http://localhost:8001"
+  : "http://localhost:8000";
 
 const api = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: PRIMARY_API_URL,
     headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
     },
+    timeout: 8000,
 });
 
 export const predictLoan = async (
     application: LoanApplication
 ): Promise<PredictionResponse> => {
-    const response = await api.post<PredictionResponse>(
-        "/predict",
-        application
-    );
-
-    return response.data;
+    try {
+        const response = await api.post<PredictionResponse>(
+            "/predict",
+            application
+        );
+        return response.data;
+    } catch (primaryError) {
+        // If local dev server is running on fallback port (e.g. 8001 vs 8000)
+        try {
+            const fallbackResponse = await axios.post<PredictionResponse>(
+                `${FALLBACK_API_URL}/predict`,
+                application,
+                {
+                    headers: { "Content-Type": "application/json", Accept: "application/json" },
+                    timeout: 8000,
+                }
+            );
+            return fallbackResponse.data;
+        } catch {
+            throw primaryError;
+        }
+    }
 };
 
 export const predictNTC = async (
