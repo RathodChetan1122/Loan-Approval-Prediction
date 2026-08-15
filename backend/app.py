@@ -1,7 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routes.loan_routes import router
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+from routes.loan_routes import router as loan_router
+from routes.assistant_routes import router as assistant_router
 
 
 # ============================================================
@@ -10,8 +17,8 @@ from routes.loan_routes import router
 
 app = FastAPI(
     title="Loan Approval Prediction API",
-    description="ML API for 7-feature loan approval prediction",
-    version="2.0.0",
+    description="ML API for 7-feature loan approval prediction and AI Loan Assistant",
+    version="2.1.0",
 )
 
 
@@ -46,4 +53,5 @@ app.add_middleware(
 # ROUTES
 # ============================================================
 
-app.include_router(router)
+app.include_router(loan_router)
+app.include_router(assistant_router)

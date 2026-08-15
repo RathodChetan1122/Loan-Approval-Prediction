@@ -6,10 +6,11 @@ import WelcomeDashboard from "./components/WelcomeDashboard";
 import BrandLogo from "./components/BrandLogo";
 import ModelPerformance from "./components/ModelPerformance";
 import EmiCalculator from "./components/EmiCalculator";
+import AiLoanAssistant from "./components/AiLoanAssistant";
 import { predictLoan } from "./services/api";
 import type { LoanApplication, PredictionResponse } from "./types/loan";
 
-type View = "welcome" | "assessment" | "result" | "calculator" | "model-performance";
+type View = "welcome" | "assessment" | "result" | "calculator" | "model-performance" | "assistant";
 
 function ShieldIcon() {
   return (
@@ -52,6 +53,12 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const openAssistant = () => {
+    setError(null);
+    setView("assistant");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handlePrediction = async (app: LoanApplication) => {
     try {
       setLoading(true);
@@ -88,6 +95,13 @@ export default function App() {
         </button>
 
         <nav className="desktop-nav" aria-label="Main navigation">
+          <button
+            type="button"
+            className="nav-link-btn"
+            onClick={openAssistant}
+          >
+            AI Loan Assistant
+          </button>
           <button
             type="button"
             className="nav-link-btn"
@@ -129,6 +143,16 @@ export default function App() {
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
             onOpenCalculator={openCalculator}
+            onOpenAssistant={openAssistant}
+          />
+        )}
+
+        {view === "assistant" && (
+          <AiLoanAssistant
+            onBack={reset}
+            onStartAssessment={startAssessment}
+            onOpenCalculator={openCalculator}
+            applicationContext={application}
           />
         )}
 
@@ -202,3 +226,4 @@ export default function App() {
     </main>
   );
 }
+

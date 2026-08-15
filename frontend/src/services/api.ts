@@ -6,13 +6,13 @@ import type {
     ValidationResponse,
 } from "../types/loan";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import type {
+    ChatRequest,
+    ChatResponse,
+    SuggestionsResponse,
+} from "../types/assistant";
 
-if (!API_BASE_URL) {
-    throw new Error(
-        "VITE_API_BASE_URL is not configured. Please configure the frontend API URL."
-    );
-}
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -56,4 +56,23 @@ export const checkModelStatus = async () => {
     return response.data;
 };
 
-export default api;
+export const sendAssistantMessage = async (
+    request: ChatRequest
+): Promise<ChatResponse> => {
+    const response = await api.post<ChatResponse>(
+        "/assistant/chat",
+        request
+    );
+
+    return response.data;
+};
+
+export const fetchAssistantSuggestions = async (): Promise<SuggestionsResponse> => {
+    const response = await api.get<SuggestionsResponse>(
+        "/assistant/suggestions"
+    );
+
+    return response.data;
+};
+
+export default api;
