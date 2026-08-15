@@ -5,7 +5,5 @@ joblib==1.5.3
 fastapi==0.141.1
 uvicorn==0.52.1
 pytest==9.1.1
-<<<<<<< HEAD
-=======
-httpx2
->>>>>>> 2cf7c6a8d2ba86daf1bacafcd5e1731d82e99203
+httpx
+shap
