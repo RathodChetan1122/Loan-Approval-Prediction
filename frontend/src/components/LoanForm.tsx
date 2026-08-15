@@ -4,7 +4,8 @@ import type { UseFormRegisterReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { LoanApplication } from "../types/loan";
-import CreditScoreGauge, { getCreditBand } from "./CreditScoreGauge";
+import CreditScoreGauge from "./CreditScoreGauge";
+import { getCreditBand } from "../utils/creditScore";
 
 const loanSchema = z.object({
   dependents: z.number().int().min(0, "Dependents cannot be negative").max(3, "Maximum 3 dependents"),
