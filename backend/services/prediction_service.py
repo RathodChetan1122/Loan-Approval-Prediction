@@ -144,6 +144,13 @@ def predict_loan(application_data: dict[str, Any]) -> dict[str, Any]:
         "max_eligible_approved_probability": max_loan_info["max_eligible_approved_probability"],
         "max_loan_status": max_loan_info["max_loan_status"],
         "max_loan_message": max_loan_info["max_loan_message"],
+        "eligibility_tier": max_loan_info["eligibility_tier"],
+        "eligibility_ratio": max_loan_info["eligibility_ratio"],
+        "total_borrowing_capacity": max_loan_info["total_borrowing_capacity"],
+        "estimated_max_emi": max_loan_info["estimated_max_emi"],
+        "foir_percentage": max_loan_info["foir_percentage"],
+        "risk_factor_percentage": max_loan_info["risk_factor_percentage"],
+        "benchmark_apr": max_loan_info["benchmark_apr"],
     }
 
 

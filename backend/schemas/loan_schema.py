@@ -1,19 +1,14 @@
+from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 
 
 class LoanApplication(BaseModel):
     dependents: int = Field(ge=0, le=3)
-
     employment_type: str
-
     annual_income: int = Field(gt=0)
-
     credit_score: float = Field(ge=300, le=900)
-
     loan_amount: int = Field(gt=0)
-
     loan_tenure: int = Field(ge=2, le=30)
-
     education: str
 
     @field_validator("employment_type")
@@ -30,7 +25,6 @@ class LoanApplication(BaseModel):
         if value not in allowed_values:
             raise ValueError(
                 "employment_type must be one of: "
-                
                 f"{sorted(allowed_values)}"
             )
 
@@ -68,6 +62,13 @@ class PredictionResponse(BaseModel):
     max_eligible_approved_probability: float
     max_loan_status: str
     max_loan_message: str
+    eligibility_tier: Optional[str] = "fully_eligible"
+    eligibility_ratio: Optional[float] = 100.0
+    total_borrowing_capacity: Optional[int] = None
+    estimated_max_emi: Optional[int] = None
+    foir_percentage: Optional[float] = None
+    risk_factor_percentage: Optional[float] = None
+    benchmark_apr: Optional[float] = None
 
 
 class MaxLoanEstimateResponse(BaseModel):
@@ -77,6 +78,13 @@ class MaxLoanEstimateResponse(BaseModel):
     max_eligible_approved_probability: float
     max_loan_status: str
     max_loan_message: str
+    eligibility_tier: Optional[str] = "fully_eligible"
+    eligibility_ratio: Optional[float] = 100.0
+    total_borrowing_capacity: Optional[int] = None
+    estimated_max_emi: Optional[int] = None
+    foir_percentage: Optional[float] = None
+    risk_factor_percentage: Optional[float] = None
+    benchmark_apr: Optional[float] = None
 
 
 class ValidationResponse(BaseModel):
