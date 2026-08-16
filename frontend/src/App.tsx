@@ -8,6 +8,8 @@ import WelcomeDashboard from "./components/WelcomeDashboard";
 import EmiCalculator from "./components/EmiCalculator";
 import BrandLogo from "./components/BrandLogo";
 import ModelPerformance from "./components/ModelPerformance";
+import AiLoanAssistant from "./components/AiLoanAssistant";
+import AiFloatingButton from "./components/AiFloatingButton";
 
 import {
   predictLoan,
@@ -28,7 +30,8 @@ type View =
   | "result"
   | "ntc-result"
   | "calculator"
-  | "model-performance";
+  | "model-performance"
+  | "assistant";
 
 function ShieldIcon() {
   return (
@@ -50,7 +53,6 @@ function ShieldIcon() {
         stroke="currentColor"
         strokeWidth="1.8"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
     </svg>
   );
@@ -101,6 +103,9 @@ function MoonIcon() {
 export default function App() {
   const [view, setView] = useState<View>("welcome");
 
+  const [previousView, setPreviousView] =
+    useState<View>("welcome");
+
   const [result, setResult] =
     useState<PredictionResponse | null>(null);
 
@@ -137,15 +142,15 @@ export default function App() {
   };
 
   const handlePrediction = async (
-    application: LoanApplication
+    loanApplication: LoanApplication
   ) => {
     try {
       setLoading(true);
       setError(null);
-      setApplication(application);
+      setApplication(loanApplication);
 
       const response =
-        await predictLoan(application);
+        await predictLoan(loanApplication);
 
       setResult(response);
       setView("result");
@@ -175,14 +180,14 @@ export default function App() {
   };
 
   const handleNTCPrediction = async (
-    application: NTCApplication
+    ntcApplication: NTCApplication
   ) => {
     try {
       setLoading(true);
       setError(null);
 
       const response =
-        await predictNTC(application);
+        await predictNTC(ntcApplication);
 
       setNtcResult(response);
       setView("ntc-result");
@@ -198,6 +203,22 @@ export default function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleAssistant = () => {
+    setError(null);
+
+    if (view === "assistant") {
+      setView(previousView || "welcome");
+    } else {
+      setPreviousView(view);
+      setView("assistant");
+    }
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
   const openCalculator = () => {
@@ -216,6 +237,7 @@ export default function App() {
     setNtcResult(null);
     setError(null);
     setView("welcome");
+    setPreviousView("welcome");
 
     window.scrollTo({
       top: 0,
@@ -361,9 +383,7 @@ export default function App() {
 
         {view === "ntc-assessment" && (
           <NTCForm
-            onSubmit={
-              handleNTCPrediction
-            }
+            onSubmit={handleNTCPrediction}
             loading={loading}
           />
         )}
@@ -385,6 +405,17 @@ export default function App() {
               onReset={reset}
             />
           )}
+
+        {view === "assistant" && (
+          <AiLoanAssistant
+            onBack={() =>
+              setView(
+                previousView || "welcome"
+              )
+            }
+            applicationContext={application}
+          />
+        )}
 
         {view === "calculator" && (
           <EmiCalculator
@@ -411,6 +442,27 @@ export default function App() {
         )}
 
       </div>
+
+      <footer className="app-footer">
+        <ShieldIcon />
+
+        <span>
+          Your information is processed securely for this assessment
+        </span>
+
+        <span className="footer-dot">
+          •
+        </span>
+
+        <span>
+          Model-based guidance, not a lender decision
+        </span>
+      </footer>
+
+      <AiFloatingButton
+        onClick={toggleAssistant}
+        isOpen={view === "assistant"}
+      />
 
     </main>
   );

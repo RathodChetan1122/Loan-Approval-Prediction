@@ -1,8 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from routes.loan_routes import router
 from routes.ntc_routes import router as ntc_router
+from routes.assistant_routes import router as assistant_router
+
 
 # ============================================================
 # APPLICATION
@@ -10,8 +18,8 @@ from routes.ntc_routes import router as ntc_router
 
 app = FastAPI(
     title="Loan Approval Prediction API",
-    description="ML API for 7-feature loan approval prediction",
-    version="2.0.0",
+    description="ML API for 7-feature loan approval prediction and AI Loan Assistant",
+    version="2.1.0",
 )
 
 
@@ -39,7 +47,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
 
-    # Allow any local port (5173, 5174, etc.) as well as all Vercel preview/production deployments
+    # Allow local development ports and Vercel preview deployments
     allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://.*\.vercel\.app",
 
     allow_credentials=True,
@@ -52,5 +60,11 @@ app.add_middleware(
 # ROUTES
 # ============================================================
 
+# Existing loan prediction + maximum eligible loan endpoints
 app.include_router(router)
+
+# Existing New-to-Credit functionality
 app.include_router(ntc_router)
+
+# New AI Loan Assistant
+app.include_router(assistant_router)
