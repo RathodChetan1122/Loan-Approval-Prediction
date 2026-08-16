@@ -48,7 +48,30 @@ export default function PredictionResult({ result, initialApplication, onReset }
   const rejected = result.rejected_probability * 100;
   const isApproved = result.prediction === "Approved";
   const decisionProbability = isApproved ? approved : rejected;
+  // Maximum Predicted Eligible Loan Amount
+  const requestedAmount =
+    result.requested_loan_amount ??
+    initialApplication?.loan_amount ??
+    0;
 
+  const maxEligibleAmount =
+    result.maximum_eligible_amount ?? 0;
+
+  const maxEligibleProb =
+    (result.max_eligible_approved_probability ?? 0) * 100;
+
+  const maxLoanStatus =
+    result.max_loan_status ??
+    (maxEligibleAmount > 0
+      ? "eligible"
+      : "none_eligible");
+
+  const isRequestedAboveMax =
+    maxLoanStatus !== "none_eligible" &&
+    requestedAmount > maxEligibleAmount;
+
+  const formatINR = (amount: number) =>
+    `₹${amount.toLocaleString("en-IN")}`;
   const explanation = result.explanation;
 
   const [isDownloading, setIsDownloading] = useState(false);
@@ -211,8 +234,124 @@ export default function PredictionResult({ result, initialApplication, onReset }
           </div>
         </div>
       </div>
+            {/* 3. Maximum Predicted Eligible Loan Amount */}
+      <section
+        className="max-loan-panel"
+        aria-labelledby="max-loan-title"
+      >
+        <header className="max-loan-header">
+          <div
+            className="max-loan-icon"
+            aria-hidden="true"
+          >
+            ₹
+          </div>
 
-      {/* 3. Rejection Explainability Section */}
+          <div>
+            <span className="max-loan-eyebrow">
+              MODEL CAPACITY ESTIMATION
+            </span>
+
+            <h2 id="max-loan-title">
+              Maximum Predicted Eligible Loan Amount
+            </h2>
+          </div>
+        </header>
+
+        <div className="max-loan-grid">
+
+          <div className="max-loan-metric-card requested-metric">
+            <span className="metric-label">
+              Requested Loan Amount
+            </span>
+
+            <strong className="metric-value">
+              {formatINR(requestedAmount)}
+            </strong>
+
+            <span
+              className={`status-pill ${
+                isApproved
+                  ? "pill-approved"
+                  : "pill-rejected"
+              }`}
+            >
+              Loan Approval: {result.prediction}
+            </span>
+          </div>
+
+          <div className="max-loan-metric-card eligible-metric">
+            <span className="metric-label">
+              Maximum Predicted Eligible Loan Amount
+            </span>
+
+            <strong className="metric-value">
+              {maxLoanStatus === "none_eligible"
+                ? "₹0"
+                : formatINR(maxEligibleAmount)}
+            </strong>
+
+            {maxLoanStatus !== "none_eligible" &&
+            maxEligibleAmount > 0 ? (
+              <span className="prob-pill">
+                Approved Probability:{" "}
+                {maxEligibleProb.toFixed(1)}%
+              </span>
+            ) : (
+              <span className="status-pill pill-rejected">
+                No Eligible Amount Found
+              </span>
+            )}
+          </div>
+
+        </div>
+
+        <div
+          className={`max-loan-comparison-box ${
+            maxLoanStatus === "none_eligible"
+              ? "comparison-none"
+              : isRequestedAboveMax
+              ? "comparison-above"
+              : "comparison-within"
+          }`}
+        >
+          {maxLoanStatus === "none_eligible" ? (
+            <p>
+              Based on your current applicant profile, the
+              existing ML model does not predict approval for
+              any evaluated loan amount up to your requested
+              amount.
+            </p>
+          ) : isRequestedAboveMax ? (
+            <>
+              <p>
+                Your requested amount is above the model's
+                predicted eligible amount.
+              </p>
+
+              <p className="suggested-amount-highlight">
+                Suggested Maximum Amount:{" "}
+                <strong>
+                  {formatINR(maxEligibleAmount)}
+                </strong>
+              </p>
+            </>
+          ) : (
+            <p>
+              Based on your current applicant profile, the
+              existing ML model predicts approval for your
+              requested amount.
+            </p>
+          )}
+        </div>
+
+        <small className="max-loan-disclaimer">
+          This is a model-predicted maximum eligible amount
+          based on the provided inputs, not a guaranteed bank
+          loan approval.
+        </small>
+      </section>
+      {/* 4. Rejection Explainability Section */}
       {!isApproved && explanation && (
         <>
           {/* SECTION 1: WHY THIS RESULT? */}

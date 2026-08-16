@@ -2,11 +2,11 @@ export interface LoanApplication {
   dependents: number;
 
   employment_type:
-    | "Private"
-    | "Government"
-    | "Self-Employed"
-    | "Unemployed"
-    | "Skilled Labor";
+  | "Private"
+  | "Government"
+  | "Self-Employed"
+  | "Unemployed"
+  | "Skilled Labor";
 
   annual_income: number;
 
@@ -17,12 +17,12 @@ export interface LoanApplication {
   loan_tenure: number;
 
   education:
-    | "Graduate"
-    | "Post Graduate"
-    | "PhD"
-    | "High School"
-    | "Diploma"
-    | "No Formal";
+  | "Graduate"
+  | "Post Graduate"
+  | "PhD"
+  | "High School"
+  | "Diploma"
+  | "No Formal";
 }
 
 export interface ExplanationFactor {
@@ -63,8 +63,33 @@ export interface PredictionResponse {
   suggestions: string[];
 
   explanation?: LoanExplanation;
+
+  requested_loan_amount?: number;
+
+  maximum_eligible_amount?: number;
+
+  maximum_eligible_prediction?: "Approved" | "Rejected";
+
+  max_eligible_approved_probability?: number;
+
+  max_loan_status?: "eligible" | "none_eligible" | "max_limit_reached";
+
+  max_loan_message?: string;
 }
 
+export interface MaxLoanEstimateResponse {
+  requested_loan_amount: number;
+
+  maximum_eligible_amount: number;
+
+  maximum_eligible_prediction: "Approved" | "Rejected";
+
+  max_eligible_approved_probability: number;
+
+  max_loan_status: "eligible" | "none_eligible" | "max_limit_reached";
+
+  max_loan_message: string;
+}
 export interface ValidationResponse {
   status: string;
 
@@ -76,11 +101,11 @@ export interface NTCApplication {
   dependents: number;
 
   employment_type:
-    | "Private"
-    | "Government"
-    | "Self-Employed"
-    | "Unemployed"
-    | "Skilled Labor";
+  | "Private"
+  | "Government"
+  | "Self-Employed"
+  | "Unemployed"
+  | "Skilled Labor";
 
   annual_income: number;
 
@@ -89,12 +114,12 @@ export interface NTCApplication {
   loan_tenure: number;
 
   education:
-    | "Graduate"
-    | "Post Graduate"
-    | "PhD"
-    | "High School"
-    | "Diploma"
-    | "No Formal";
+  | "Graduate"
+  | "Post Graduate"
+  | "PhD"
+  | "High School"
+  | "Diploma"
+  | "No Formal";
 }
 
 export interface NTCShapExplanation {

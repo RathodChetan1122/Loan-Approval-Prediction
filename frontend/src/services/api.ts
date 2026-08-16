@@ -2,6 +2,7 @@ import axios from "axios";
 
 import type {
     LoanApplication,
+    MaxLoanEstimateResponse,
     PredictionResponse,
     ValidationResponse,
     NTCApplication,
@@ -54,6 +55,17 @@ export const predictNTC = async (
 ): Promise<NTCPredictionResponse> => {
     const response = await api.post<NTCPredictionResponse>(
         "/new-predict",
+        application
+    );
+
+    return response.data;
+};
+
+export const getMaxEligibleLoan = async (
+    application: LoanApplication
+): Promise<MaxLoanEstimateResponse> => {
+    const response = await api.post<MaxLoanEstimateResponse>(
+        "/max-eligible-loan",
         application
     );
 
