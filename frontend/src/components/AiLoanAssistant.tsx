@@ -12,11 +12,11 @@ interface AiLoanAssistantProps {
   applicationContext?: LoanApplication | null;
 }
 
-// Lighthearted, funny, clean greeting with NO loan information dump
+// Plain, direct greeting — no loan information dump
 const INITIAL_MESSAGE: ChatMessage = {
   id: "welcome-1",
   role: "assistant",
-  content: `Beep boop! 🤖 Hey there! I'm your AI buddy with zero judgment and all the answers.\n\nWhether you're planning your next big move, deciphering mysterious credit numbers, or just wondering where all your money went this month—I've got your back! What's on your mind today?`,
+  content: `I can help you make sense of credit scores, EMIs, and what affects loan approval. Ask me anything, or pick a topic below to get started.`,
   timestamp: Date.now(),
 };
 

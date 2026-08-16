@@ -5,6 +5,13 @@ import pandas as pd
 import shap
 
 from services.ntc_suggestion_service import generate_ntc_suggestions
+from services.explainability_service import (
+    FEATURE_METADATA,
+    MODEL_DISCLAIMER,
+    classify_impact,
+    format_user_value,
+    generate_feature_explanation,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -108,6 +115,118 @@ def predict_ntc(data: dict):
         input_data
     )
 
+    contribution_map: dict[str, float] = {}
+
+    for item in shap_explanation:
+        raw_feature = item["feature"]
+        contribution = float(item["impact"])
+
+        if raw_feature.startswith("numeric__"):
+            feature_name = raw_feature.replace("numeric__", "")
+        elif raw_feature.startswith("categorical__"):
+            suffix = raw_feature.replace("categorical__", "")
+            if suffix.startswith("Employment_Type_"):
+                feature_name = "Employment_Type"
+                selected_value = data["employment_type"]
+                active_value = suffix.replace("Employment_Type_", "")
+                if active_value != selected_value:
+                    continue
+            elif suffix.startswith("Education_"):
+                feature_name = "Education"
+                selected_value = data["education"]
+                active_value = suffix.replace("Education_", "")
+                if active_value != selected_value:
+                    continue
+            else:
+                continue
+        else:
+            feature_name = raw_feature
+
+        contribution_map[feature_name] = contribution
+
+    feature_order = [
+        "Dependents",
+        "Employment_Type",
+        "Annual_Income",
+        "Loan_Amount",
+        "Loan_Tenure",
+        "Education",
+    ]
+
+    aggregated_factors = []
+    for feature_name in feature_order:
+        if feature_name not in contribution_map:
+            continue
+
+        contribution = contribution_map[feature_name]
+        impact_level, impact_direction = classify_impact(contribution)
+        formatted_value = format_user_value(feature_name, data.get(feature_name.lower() if feature_name == "Dependents" else feature_name))
+
+        if feature_name == "Dependents":
+            formatted_value = format_user_value("Dependents", data["dependents"])
+        elif feature_name == "Employment_Type":
+            formatted_value = data["employment_type"]
+        elif feature_name == "Education":
+            formatted_value = data["education"]
+        elif feature_name == "Annual_Income":
+            formatted_value = format_user_value("Annual_Income", data["annual_income"])
+        elif feature_name == "Loan_Amount":
+            formatted_value = format_user_value("Loan_Amount", data["loan_amount"])
+        elif feature_name == "Loan_Tenure":
+            formatted_value = format_user_value("Loan_Tenure", data["loan_tenure"])
+
+        meta = FEATURE_METADATA.get(feature_name, {})
+        factor = {
+            "feature": feature_name,
+            "label": meta.get("label", feature_name),
+            "user_value": formatted_value,
+            "impact_level": impact_level,
+            "impact_direction": impact_direction,
+            "raw_contribution": round(float(contribution), 4),
+            "explanation": generate_feature_explanation(
+                feature_name,
+                formatted_value,
+                impact_level,
+                impact_direction,
+            ),
+            "is_actionable": meta.get("actionable", False),
+        }
+        aggregated_factors.append(factor)
+
+    negative_factors = sorted(
+        [factor for factor in aggregated_factors if factor["impact_direction"] == "negative"],
+        key=lambda item: item["raw_contribution"],
+    )
+    positive_factors = sorted(
+        [factor for factor in aggregated_factors if factor["impact_direction"] == "positive"],
+        key=lambda item: item["raw_contribution"],
+        reverse=True,
+    )
+
+    action_plan = []
+    priority = 1
+    for factor in negative_factors[:3]:
+        meta = FEATURE_METADATA.get(factor["feature"], {})
+        action_plan.append(
+            {
+                "priority": priority,
+                "title": meta.get("negative_title", f"Address {factor['label']}"),
+                "subtitle": meta.get("negative_subtitle", f"Review {factor['label']}"),
+                "factor_label": factor["label"],
+                "reason": factor["explanation"],
+                "recommendation": meta.get("action_template", ""),
+            }
+        )
+        priority += 1
+
+    explanation = {
+        "top_negative_factors": negative_factors[:3],
+        "positive_factors": positive_factors[:3],
+        "all_factors": aggregated_factors,
+        "action_plan": action_plan,
+        "disclaimer": MODEL_DISCLAIMER,
+    }
+
     suggestions = generate_ntc_suggestions(
         data
     )
@@ -123,6 +242,13 @@ def predict_ntc(data: dict):
             rejected_probability,
             4,
         ),
+        "requested_loan_amount": int(data["loan_amount"]),
+        "maximum_eligible_amount": 0,
+        "maximum_eligible_prediction": loan_status,
+        "max_eligible_approved_probability": round(approved_probability, 4),
+        "max_loan_status": "eligible" if loan_status == "Approved" else "none_eligible",
+        "max_loan_message": "NTC model estimate based on the submitted application profile.",
+        "explanation": explanation,
         "shap_explanation": shap_explanation,
         "suggestions": suggestions,
     }

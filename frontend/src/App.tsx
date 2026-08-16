@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
+import AiFloatingButton from "./components/AiFloatingButton";
+import AiLoanAssistant from "./components/AiLoanAssistant";
+import BrandLogo from "./components/BrandLogo";
+import EmiCalculator from "./components/EmiCalculator";
 import LoanForm from "./components/LoanForm";
+import ModelPerformance from "./components/ModelPerformance";
 import NTCForm from "./components/NTCForm";
 import PredictionResult from "./components/PredictionResult";
 import WelcomeDashboard from "./components/WelcomeDashboard";
-import EmiCalculator from "./components/EmiCalculator";
-import BrandLogo from "./components/BrandLogo";
-import ModelPerformance from "./components/ModelPerformance";
-import AiLoanAssistant from "./components/AiLoanAssistant";
-import AiFloatingButton from "./components/AiFloatingButton";
 
 import {
   predictLoan,
@@ -19,8 +19,8 @@ import {
 import type {
   LoanApplication,
   NTCApplication,
-  PredictionResponse,
   NTCPredictionResponse,
+  PredictionResponse,
 } from "./types/loan";
 
 type View =
@@ -115,6 +115,9 @@ export default function App() {
   const [ntcResult, setNtcResult] =
     useState<NTCPredictionResponse | null>(null);
 
+  const [ntcApplication, setNtcApplication] =
+    useState<NTCApplication | null>(null);
+
   const [loading, setLoading] =
     useState(false);
 
@@ -185,6 +188,7 @@ export default function App() {
     try {
       setLoading(true);
       setError(null);
+      setNtcApplication(ntcApplication);
 
       const response =
         await predictNTC(ntcApplication);
@@ -235,6 +239,7 @@ export default function App() {
     setResult(null);
     setApplication(null);
     setNtcResult(null);
+    setNtcApplication(null);
     setError(null);
     setView("welcome");
     setPreviousView("welcome");
@@ -279,11 +284,10 @@ export default function App() {
                   : "light"
               )
             }
-            aria-label={`Switch to ${
-              theme === "light"
-                ? "dark"
-                : "light"
-            } theme`}
+            aria-label={`Switch to ${theme === "light"
+              ? "dark"
+              : "light"
+              } theme`}
           >
             {theme === "light" ? (
               <>
@@ -368,9 +372,8 @@ export default function App() {
                 behavior: "smooth",
               });
             }}
-            onOpenCalculator={
-              openCalculator
-            }
+            onOpenCalculator={openCalculator}
+            onOpenAssistant={toggleAssistant}
           />
         )}
 
@@ -402,6 +405,7 @@ export default function App() {
           ntcResult && (
             <PredictionResult
               result={ntcResult}
+              initialApplication={ntcApplication ?? undefined}
               onReset={reset}
             />
           )}

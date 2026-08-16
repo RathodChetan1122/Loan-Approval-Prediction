@@ -1,17 +1,17 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
 import type {
-  PredictionResponse,
-  NTCPredictionResponse,
-  LoanApplication,
-  ExplanationFactor,
   ActionPlanItem,
+  ExplanationFactor,
+  LoanApplication,
+  NTCApplication,
+  NTCPredictionResponse,
+  PredictionResponse,
 } from "../types/loan";
-import { predictLoan } from "../services/api";
 import { generateLoanAssessmentPdf } from "../utils/pdfGenerator";
 
 interface Props {
   result: PredictionResponse | NTCPredictionResponse;
-  initialApplication?: LoanApplication;
+  initialApplication?: LoanApplication | NTCApplication;
   onReset: () => void;
 }
 
@@ -34,13 +34,10 @@ function ChevronIcon({ expanded }: { expanded: boolean }) {
   );
 }
 
-function isNTCResult(
-  result: PredictionResponse | NTCPredictionResponse
-): result is NTCPredictionResponse {
-  return (
-    "shap_explanation" in result &&
-    Array.isArray(result.shap_explanation)
-  );
+function isNTCApplication(
+  application: LoanApplication | NTCApplication | undefined
+): application is NTCApplication {
+  return !!application && !("credit_score" in application);
 }
 
 export default function PredictionResult({ result, initialApplication, onReset }: Props) {
@@ -73,76 +70,15 @@ export default function PredictionResult({ result, initialApplication, onReset }
   const formatINR = (amount: number) =>
     `₹${amount.toLocaleString("en-IN")}`;
   const explanation = result.explanation;
-
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const ntcFactors = isNTCResult(result)
-    ? [...result.shap_explanation]
-        .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))
-        .slice(0, 3)
-    : [];
-
-  const [simulatedAmount, setSimulatedAmount] = useState(initialApplication?.loan_amount || 50000);
-  const [simulatedTenure, setSimulatedTenure] = useState(initialApplication?.loan_tenure || 12);
-  const [simulationResponse, setSimulationResponse] = useState<{
-    result: PredictionResponse | NTCPredictionResponse;
-    amount: number;
-    tenure: number;
-  } | null>(null);
-  const [simulating, setSimulating] = useState(false);
-
-  const isInitial =
-    !!initialApplication &&
-    simulatedAmount === initialApplication.loan_amount &&
-    simulatedTenure === initialApplication.loan_tenure;
-
-  const simulatedResult = useMemo(() => {
-    if (
-      simulationResponse?.amount === simulatedAmount &&
-      simulationResponse?.tenure === simulatedTenure
-    ) {
-      return simulationResponse.result;
-    }
-    return null;
-  }, [simulationResponse, simulatedAmount, simulatedTenure]);
-
-  const activeSimulatedResult = simulatedResult || (isInitial ? result : null);
-  const simApproved = activeSimulatedResult
-    ? activeSimulatedResult.approved_probability * 100
-    : approved;
-  const diff = simApproved - approved;
-
-  useEffect(() => {
-    if (!initialApplication || isInitial) return;
-
-    const timer = setTimeout(async () => {
-      setSimulating(true);
-      try {
-        const res = await predictLoan({
-          ...initialApplication,
-          loan_amount: simulatedAmount,
-          loan_tenure: simulatedTenure,
-        });
-        setSimulationResponse({
-          result: res,
-          amount: simulatedAmount,
-          tenure: simulatedTenure,
-        });
-      } catch (e) {
-        console.error("Simulation failed", e);
-      } finally {
-        setSimulating(false);
-      }
-    }, 450);
-
-    return () => clearTimeout(timer);
-  }, [simulatedAmount, simulatedTenure, initialApplication, isInitial]);
+  const pdfApplication = isNTCApplication(initialApplication) ? null : initialApplication ?? null;
 
   const handleDownloadPdf = async () => {
     try {
       setIsDownloading(true);
       await new Promise((resolve) => setTimeout(resolve, 150));
-      generateLoanAssessmentPdf({ application: initialApplication, result });
+      generateLoanAssessmentPdf({ application: pdfApplication, result });
     } catch (error) {
       console.error("Failed to generate PDF report:", error);
     } finally {
@@ -234,7 +170,7 @@ export default function PredictionResult({ result, initialApplication, onReset }
           </div>
         </div>
       </div>
-            {/* 3. Maximum Predicted Eligible Loan Amount */}
+      {/* 3. Maximum Predicted Eligible Loan Amount */}
       <section
         className="max-loan-panel"
         aria-labelledby="max-loan-title"
@@ -270,11 +206,10 @@ export default function PredictionResult({ result, initialApplication, onReset }
             </strong>
 
             <span
-              className={`status-pill ${
-                isApproved
-                  ? "pill-approved"
-                  : "pill-rejected"
-              }`}
+              className={`status-pill ${isApproved
+                ? "pill-approved"
+                : "pill-rejected"
+                }`}
             >
               Loan Approval: {result.prediction}
             </span>
@@ -292,7 +227,7 @@ export default function PredictionResult({ result, initialApplication, onReset }
             </strong>
 
             {maxLoanStatus !== "none_eligible" &&
-            maxEligibleAmount > 0 ? (
+              maxEligibleAmount > 0 ? (
               <span className="prob-pill">
                 Approved Probability:{" "}
                 {maxEligibleProb.toFixed(1)}%
@@ -307,13 +242,12 @@ export default function PredictionResult({ result, initialApplication, onReset }
         </div>
 
         <div
-          className={`max-loan-comparison-box ${
-            maxLoanStatus === "none_eligible"
-              ? "comparison-none"
-              : isRequestedAboveMax
+          className={`max-loan-comparison-box ${maxLoanStatus === "none_eligible"
+            ? "comparison-none"
+            : isRequestedAboveMax
               ? "comparison-above"
               : "comparison-within"
-          }`}
+            }`}
         >
           {maxLoanStatus === "none_eligible" ? (
             <p>
@@ -780,120 +714,7 @@ export default function PredictionResult({ result, initialApplication, onReset }
         </div>
       )}
 
-      {/* 5. NTC Insights Section (for New-To-Credit applicants) */}
-      {isNTCResult(result) && (
-        <section className="insights-panel" aria-labelledby="ntc-insights-title">
-          <header>
-            <span className="guide-icon">✦</span>
-            <div>
-              <p id="ntc-insights-title">Why the model made this prediction</p>
-              <small>These are the strongest factors that influenced this NTC assessment.</small>
-            </div>
-          </header>
-
-          <div className="insights-grid">
-            {ntcFactors.map((factor) => (
-              <article key={factor.feature} className="insight-card">
-                <span>{factor.impact >= 0 ? "↑" : "↓"}</span>
-                <div>
-                  <strong>
-                    {factor.feature.replace("remainder__", "").replaceAll("_", " ")}
-                  </strong>
-                  <small>
-                    {factor.impact >= 0 ? "Positive influence" : "Negative influence"}
-                  </small>
-                </div>
-                <b>
-                  {factor.impact >= 0 ? "+" : ""}
-                  {factor.impact.toFixed(3)}
-                </b>
-              </article>
-            ))}
-          </div>
-
-          <p className="guide-note">
-            SHAP values explain the direction and relative strength of each feature's contribution.
-            They are model explanations, not guarantees of approval or rejection.
-          </p>
-        </section>
-      )}
-
-      {/* 6. Interactive What-If Simulator */}
-      {initialApplication && (
-        <section className="simulator-panel" aria-labelledby="simulator-title">
-          <header>
-            <span className="guide-icon simulator-icon">🎛️</span>
-            <div>
-              <p id="simulator-title">Interactive What-If Simulator</p>
-              <small>Adjust loan terms to see how your approval odds change in real-time.</small>
-            </div>
-          </header>
-
-          <div className="simulator-content">
-            <div className="simulator-controls">
-              <div className="slider-group">
-                <div className="slider-header">
-                  <label>Loan Amount</label>
-                  <strong>₹{simulatedAmount.toLocaleString("en-IN")}</strong>
-                </div>
-                <input
-                  type="range"
-                  min="10000"
-                  max="1000000"
-                  step="5000"
-                  value={simulatedAmount}
-                  onChange={(e) => setSimulatedAmount(Number(e.target.value))}
-                  className="custom-range simulator-range"
-                  style={
-                    {
-                      "--range-progress": `${
-                        ((simulatedAmount - 10000) / (1000000 - 10000)) * 100
-                      }%`,
-                    } as React.CSSProperties
-                  }
-                />
-              </div>
-
-              <div className="slider-group">
-                <div className="slider-header">
-                  <label>Loan Tenure</label>
-                  <strong>{simulatedTenure} Months</strong>
-                </div>
-                <input
-                  type="range"
-                  min="6"
-                  max="60"
-                  step="6"
-                  value={simulatedTenure}
-                  onChange={(e) => setSimulatedTenure(Number(e.target.value))}
-                  className="custom-range simulator-range"
-                  style={
-                    {
-                      "--range-progress": `${((simulatedTenure - 6) / (60 - 6)) * 100}%`,
-                    } as React.CSSProperties
-                  }
-                />
-              </div>
-            </div>
-
-            <div className={`simulator-impact ${simulating ? "simulating" : ""}`}>
-              <span>Simulated Approval</span>
-              <strong className={simApproved > 50 ? "impact-good" : "impact-bad"}>
-                {simApproved.toFixed(1)}%
-              </strong>
-              {diff !== 0 && (
-                <div className={`impact-diff ${diff > 0 ? "diff-up" : "diff-down"}`}>
-                  {diff > 0 ? "↗" : "↘"} {Math.abs(diff).toFixed(1)}%{" "}
-                  {diff > 0 ? "improved" : "decreased"}
-                </div>
-              )}
-              {simulating && <small className="sim-loading">Calculating...</small>}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 7. End of Flow: Download Assessment Report + Check Another Application */}
+      {/* 6. End of Flow: Download Assessment Report + Check Another Application */}
       <div className="result-actions-bar">
         <button
           type="button"

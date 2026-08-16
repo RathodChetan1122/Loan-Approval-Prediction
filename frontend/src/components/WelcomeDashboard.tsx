@@ -6,6 +6,7 @@ interface WelcomeDashboardProps {
   onContinueAfterCibil: () => void;
   onViewPerformance: () => void;
   onOpenCalculator?: () => void;
+  onOpenAssistant?: () => void;
 }
 
 const ModelPerformanceIcon = () => (
@@ -76,6 +77,7 @@ export default function WelcomeDashboard({
   onContinueAfterCibil,
   onViewPerformance,
   onOpenCalculator,
+  onOpenAssistant,
 }: WelcomeDashboardProps) {
   return (
     <>
@@ -86,18 +88,17 @@ export default function WelcomeDashboard({
       >
         <div className="welcome-copy">
           <span className="welcome-eyebrow">
-            <i />
-            SMART LOAN ELIGIBILITY
+            Loan eligibility
           </span>
 
           <h1>
-            Make smarter borrowing decisions.
+            Know where you stand before a lender does.
           </h1>
 
           <p>
-            Analyze your financial profile and
-            understand your predicted loan
-            eligibility before you apply.
+            We look at your income, obligations, and credit history the way
+            a lender would, and tell you what to expect — before you fill
+            out a single application.
           </p>
 
           <div className="hero-cta-group">
@@ -107,7 +108,6 @@ export default function WelcomeDashboard({
               onClick={onStart}
             >
               Check my eligibility
-              <span>→</span>
             </button>
 
             {onOpenCalculator && (
@@ -116,16 +116,14 @@ export default function WelcomeDashboard({
                 className="hero-secondary-cta"
                 onClick={onOpenCalculator}
               >
-                <span>₹</span>
-                Calculate EMI
+                Calculate EMI instead
               </button>
             )}
           </div>
 
           <p className="hero-note">
-            No credit credentials required.
-            Your assessment stays in this browser
-            session.
+            No credit credentials needed to start. Everything you enter
+            stays in this browser tab.
           </p>
         </div>
 
@@ -184,14 +182,11 @@ export default function WelcomeDashboard({
           {/* EXISTING CREDIT USER */}
           <button
             type="button"
-            className="cibil-choice known-score"
+            className="cibil-choice choice-known"
             onClick={onKnowScore}
           >
-            <span className="choice-symbol">
-              ✓
-            </span>
-
             <strong>
+              <span className="choice-tick" aria-hidden="true" />
               Yes, I know my score
             </strong>
 
@@ -208,14 +203,11 @@ export default function WelcomeDashboard({
           {/* NEW TO CREDIT */}
           <button
             type="button"
-            className="cibil-choice known-score"
+            className="cibil-choice choice-new"
             onClick={onContinueAfterCibil}
           >
-            <span className="choice-symbol">
-              ✦
-            </span>
-
             <strong>
+              <span className="choice-tick" aria-hidden="true" />
               I'm new to credit
             </strong>
 
@@ -336,12 +328,10 @@ export default function WelcomeDashboard({
 
           {/* MODEL PERFORMANCE */}
           <article
-            className="feature-card"
+            className="feature-card feature-card-flat"
             style={{
               animationDelay: "0ms",
               cursor: "pointer",
-              border:
-                "1px solid var(--primary)",
             }}
             onClick={onViewPerformance}
           >
@@ -349,34 +339,26 @@ export default function WelcomeDashboard({
               <ModelPerformanceIcon />
             </span>
 
-            <h3>
-              Model Performance
-            </h3>
+            <div className="feature-card-body">
+              <h3>
+                Model performance
+              </h3>
 
-            <p>
-              Explore the accuracy, feature
-              importance, and transparency insights
-              behind the LoanWise prediction model.
-            </p>
+              <p>
+                Explore the accuracy, feature
+                importance, and transparency insights
+                behind the LoanWise prediction model.
+              </p>
 
-            <span
-              style={{
-                display: "inline-block",
-                marginTop: "12px",
-                background: "transparent",
-                color: "var(--primary)",
-                fontSize: "12px",
-                padding: 0,
-                fontWeight: 700,
-              }}
-            >
-              View Model Performance →
-            </span>
+              <span className="feature-card-link">
+                View model performance →
+              </span>
+            </div>
           </article>
 
           {/* CIBIL */}
           <article
-            className="feature-card"
+            className="feature-card feature-card-flat"
             style={{
               animationDelay: "80ms",
               cursor: "pointer",
@@ -398,74 +380,62 @@ export default function WelcomeDashboard({
               <CibilLogoIcon />
             </span>
 
-            <h3>
-              CIBIL guidance
-            </h3>
+            <div className="feature-card-body">
+              <h3>
+                CIBIL score check
+              </h3>
 
-            <p>
-              Check your score securely with the
-              official CIBIL website when you need it.
-            </p>
+              <p>
+                Check your score securely with the
+                official CIBIL website when you need it.
+              </p>
+
+              <span className="feature-card-link">
+                Check CIBIL score →
+              </span>
+            </div>
           </article>
 
-          {/* PERSONALIZED INSIGHTS */}
+          {/* AI LOAN ASSISTANT */}
           <article
-            className="feature-card"
+            className="feature-card feature-card-flat"
             style={{
               animationDelay: "160ms",
+              cursor: onOpenAssistant ? "pointer" : "default",
             }}
+            onClick={onOpenAssistant}
+            onKeyDown={(event) => {
+              if (onOpenAssistant && (event.key === "Enter" || event.key === " ")) {
+                event.preventDefault();
+                onOpenAssistant();
+              }
+            }}
+            role={onOpenAssistant ? "button" : undefined}
+            tabIndex={onOpenAssistant ? 0 : undefined}
+            aria-label={onOpenAssistant ? "Open AI assistant" : undefined}
           >
-            <span>✦</span>
+            <span>
+              ✦
+            </span>
 
-            <h3>
-              Personalized insights
-            </h3>
+            <div className="feature-card-body">
+              <h3>
+                AI Loan Assistant
+              </h3>
 
-            <p>
-              See model-based probabilities and
-              useful next steps after your
-              assessment.
-            </p>
+              <p>
+                Ask for tailored guidance, next steps,
+                and clarification on your loan scenario.
+              </p>
+
+              <span className="feature-card-link">
+                Open AI assistant →
+              </span>
+            </div>
           </article>
 
         </div>
 
-        {onOpenCalculator && (
-          <div className="tool-banner">
-
-            <div className="tool-banner-content">
-              <span
-                className="tool-icon"
-                aria-hidden="true"
-              >
-                ₹
-              </span>
-
-              <div>
-                <h3>
-                  Independent Loan EMI Calculator
-                </h3>
-
-                <p>
-                  Calculate your estimated monthly
-                  EMI, total interest payable, and
-                  total repayment amount with custom
-                  interest rates and flexible tenures.
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              className="tool-cta"
-              onClick={onOpenCalculator}
-            >
-              Open EMI Calculator
-              <span>→</span>
-            </button>
-
-          </div>
-        )}
       </section>
 
       {/* PROCESS */}
@@ -486,28 +456,28 @@ export default function WelcomeDashboard({
         <ol className="process-list">
 
           <li>
-            <b>01</b>
+            <b aria-hidden="true">01</b>
             <span>
               Choose your credit profile
             </span>
           </li>
 
           <li>
-            <b>02</b>
+            <b aria-hidden="true">02</b>
             <span>
               Share your financial profile
             </span>
           </li>
 
           <li>
-            <b>03</b>
+            <b aria-hidden="true">03</b>
             <span>
               Receive a model prediction
             </span>
           </li>
 
           <li>
-            <b>04</b>
+            <b aria-hidden="true">04</b>
             <span>
               Understand your next steps
             </span>
