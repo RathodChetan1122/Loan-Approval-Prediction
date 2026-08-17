@@ -15,10 +15,28 @@ def generate_ntc_suggestions(
     suggestions: list[str] = []
 
     annual_income = application["annual_income"]
+    monthly_expenses = application.get("monthly_expenses", 0)
+    monthly_income = annual_income / 12
+    expense_ratio = (monthly_expenses / monthly_income) if monthly_income > 0 else 0
+    disposable_income = monthly_income - monthly_expenses
+
     loan_amount = application["loan_amount"]
     loan_tenure = application["loan_tenure"]
     employment_type = application["employment_type"]
     dependents = application["dependents"]
+
+    # --------------------------------------------------------
+    # Expense Ratio
+    # --------------------------------------------------------
+    
+    if disposable_income < 0:
+        suggestions.append(
+            "Your monthly expenses exceed your monthly income. Consider reducing monthly expenses or increasing income before applying."
+        )
+    elif expense_ratio > 0.6:
+        suggestions.append(
+            "Your monthly expenses consume a large portion of your income. Reduce monthly expenses to improve repayment capacity."
+        )
 
     # --------------------------------------------------------
     # Loan amount vs income

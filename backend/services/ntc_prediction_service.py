@@ -90,13 +90,17 @@ def predict_ntc(data: dict):
         "Dependents": data["dependents"],
         "Employment_Type": data["employment_type"],
         "Annual_Income": data["annual_income"],
+        "Monthly_Expenses": data["monthly_expenses"],
         "Loan_Amount": data["loan_amount"],
         "Loan_Tenure": data["loan_tenure"],
     }])
 
-    prediction = int(
-        pipeline.predict(input_data)[0]
-    )
+    prediction_raw = pipeline.predict(input_data)[0]
+    
+    if isinstance(prediction_raw, str):
+        loan_status = prediction_raw
+    else:
+        loan_status = reverse_mapping[int(prediction_raw)]
 
     probabilities = pipeline.predict_proba(
         input_data
@@ -117,8 +121,6 @@ def predict_ntc(data: dict):
         approved_probability,
         rejected_probability,
     )
-
-    loan_status = reverse_mapping[prediction]
 
     shap_explanation = _get_shap_explanation(
         input_data
@@ -157,6 +159,7 @@ def predict_ntc(data: dict):
         "Dependents",
         "Employment_Type",
         "Annual_Income",
+        "Monthly_Expenses",
         "Loan_Amount",
         "Loan_Tenure",
         "Education",
@@ -179,6 +182,8 @@ def predict_ntc(data: dict):
             formatted_value = data["education"]
         elif feature_name == "Annual_Income":
             formatted_value = format_user_value("Annual_Income", data["annual_income"])
+        elif feature_name == "Monthly_Expenses":
+            formatted_value = format_user_value("Monthly_Expenses", data["monthly_expenses"])
         elif feature_name == "Loan_Amount":
             formatted_value = format_user_value("Loan_Amount", data["loan_amount"])
         elif feature_name == "Loan_Tenure":
@@ -240,6 +245,11 @@ def predict_ntc(data: dict):
         data
     )
 
+    monthly_income = data["annual_income"] / 12
+    monthly_expenses = data["monthly_expenses"]
+    disposable_income = monthly_income - monthly_expenses
+    expense_ratio = (monthly_expenses / monthly_income) * 100 if monthly_income > 0 else 0
+
     return {
         "prediction": loan_status,
         "confidence": round(confidence, 4),
@@ -260,4 +270,7 @@ def predict_ntc(data: dict):
         "explanation": explanation,
         "shap_explanation": shap_explanation,
         "suggestions": suggestions,
+        "monthly_income": monthly_income,
+        "disposable_income": disposable_income,
+        "expense_ratio": expense_ratio,
     }

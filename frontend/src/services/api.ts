@@ -833,6 +833,11 @@ function simulateClientSideNTCPrediction(
     };
     const standard = simulateClientSideLoanPrediction(loanApp);
 
+    const monthly_income = app.annual_income / 12;
+    const monthly_expenses = app.monthly_expenses || 0;
+    const disposable_income = monthly_income - monthly_expenses;
+    const expense_ratio = monthly_income > 0 ? (monthly_expenses / monthly_income) * 100 : 0;
+
     return {
         ...standard,
         confidence: 0.89,
@@ -842,6 +847,9 @@ function simulateClientSideNTCPrediction(
             { feature: "Loan_Amount", impact: -0.18 },
             { feature: "Loan_Tenure", impact: 0.12 },
         ],
+        monthly_income,
+        disposable_income,
+        expense_ratio,
     };
 }
 

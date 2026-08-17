@@ -216,7 +216,8 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
   checkPageBreak(48);
 
   const colWidth = (contentWidth - 6) / 2; // 86mm each
-  const colHeight = 42;
+  const isNTC = application && 'monthly_expenses' in application;
+  const colHeight = isNTC ? 60 : 42;
 
   // Left Card: Applicant Profile
   doc.setFillColor(248, 250, 252);
@@ -246,8 +247,18 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
     { label: "Employment:", val: employmentVal },
     { label: "Education:", val: educationVal },
     { label: "Annual Income:", val: incomeVal },
-    { label: "Credit Score (CIBIL):", val: creditScoreVal },
   ];
+  
+  if (isNTC) {
+    const ntcApp = application as any;
+    const ntcRes = result as any;
+    applicantRows.push({ label: "Monthly Income:", val: formatInr(ntcRes.monthly_income || (ntcApp.annual_income / 12)) });
+    applicantRows.push({ label: "Monthly Expenses:", val: formatInr(ntcApp.monthly_expenses || 0) });
+    applicantRows.push({ label: "Disposable Income:", val: formatInr(ntcRes.disposable_income || 0) });
+    applicantRows.push({ label: "Expense Ratio:", val: `${(ntcRes.expense_ratio || 0).toFixed(1)}%` });
+  } else {
+    applicantRows.push({ label: "Credit Score (CIBIL):", val: creditScoreVal });
+  }
 
   let applicantY = currentY + 13.5;
   applicantRows.forEach((row) => {

@@ -179,6 +179,72 @@ export default function PredictionResult({ result, initialApplication, onReset }
           </div>
         </div>
       </div>
+      
+      {/* 2.5 NTC Financial Summary */}
+      {'monthly_income' in result && initialApplication && 'monthly_expenses' in initialApplication && (
+        <section className="ntc-financial-summary" style={{ marginTop: '24px', padding: '24px', backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
+          <header style={{ marginBottom: '16px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em', color: 'var(--text-muted)' }}>FINANCIAL PROFILE</span>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--navy)', marginTop: '4px' }}>Financial Summary & Assessment</h2>
+          </header>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Annual Income</small>
+              <strong>{formatINR(initialApplication.annual_income)}</strong>
+            </div>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Monthly Income</small>
+              <strong>{formatINR((result as NTCPredictionResponse).monthly_income)}</strong>
+            </div>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Monthly Expenses</small>
+              <strong>{formatINR(initialApplication.monthly_expenses)}</strong>
+            </div>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Disposable Monthly Income</small>
+              <strong style={{ color: (result as NTCPredictionResponse).disposable_income < 0 ? 'var(--danger)' : 'var(--success)' }}>
+                {(result as NTCPredictionResponse).disposable_income < 0 ? '-' : ''}{formatINR(Math.abs((result as NTCPredictionResponse).disposable_income))}
+              </strong>
+            </div>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Expense Ratio</small>
+              <strong>{((result as NTCPredictionResponse).expense_ratio).toFixed(1)}%</strong>
+            </div>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Loan Requested</small>
+              <strong>{formatINR(requestedAmount)}</strong>
+            </div>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Repayment Tenure</small>
+              <strong>{initialApplication.loan_tenure} years</strong>
+            </div>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Employment Type</small>
+              <strong>{initialApplication.employment_type}</strong>
+            </div>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Dependents</small>
+              <strong>{initialApplication.dependents}</strong>
+            </div>
+            {'education' in initialApplication && (
+              <div>
+                <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Education</small>
+                <strong>{initialApplication.education}</strong>
+              </div>
+            )}
+          </div>
+          
+          <div style={{ padding: '16px', backgroundColor: 'var(--surface-hover)', borderRadius: 'var(--radius-sm)', borderLeft: `4px solid ${(result as NTCPredictionResponse).disposable_income < 0 ? 'var(--danger)' : 'var(--primary)'}` }}>
+            <strong style={{ display: 'block', marginBottom: '8px', color: 'var(--navy)' }}>Financial Assessment</strong>
+            <p style={{ color: 'var(--text-body)', margin: 0, lineHeight: 1.5 }}>
+              Monthly expenses represent approximately <strong>{((result as NTCPredictionResponse).expense_ratio).toFixed(1)}%</strong> of monthly income, leaving <strong>{((result as NTCPredictionResponse).disposable_income < 0 ? '-' : '') + formatINR(Math.abs((result as NTCPredictionResponse).disposable_income))}</strong> of estimated disposable income.
+              {(result as NTCPredictionResponse).disposable_income < 0 && ' WARNING: Your estimated monthly expenses exceed your monthly income. This indicates severe financial stress and high repayment risk.'}
+            </p>
+          </div>
+        </section>
+      )}
+
       {/* 3. Maximum Predicted Eligible Loan Amount */}
       <section
         className="max-loan-panel"

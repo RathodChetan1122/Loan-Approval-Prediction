@@ -158,7 +158,6 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
   overflow: hidden;
 }
 
@@ -1325,7 +1324,6 @@ body[data-theme="dark"] .emi-intro h1 {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 28px;
-  box-shadow: var(--shadow);
 }
 
 body[data-theme="dark"] .emi-card {
@@ -1602,8 +1600,9 @@ body[data-theme="dark"] .metric-box {
 }
 
 .metric-amount {
-  font-size: 17px;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
   color: var(--navy);
   display: block;
   margin-bottom: 2px;
@@ -2143,7 +2142,7 @@ input:focus-visible {
   }
 
   .assessment-card {
-    border-radius: 19px;
+    border-radius: var(--radius-lg);
   }
 
   .assessment-header {
@@ -2274,7 +2273,6 @@ input:focus-visible {
 }
 
 .assessment-card {
-  box-shadow: 0 20px 55px rgba(31, 43, 34, .10), 0 2px 4px rgba(31, 43, 34, .03);
 }
 
 .assessment-header {
@@ -2282,7 +2280,7 @@ input:focus-visible {
 }
 
 .progress-fill {
-  background: linear-gradient(90deg, #2B3A2E, #5b9cff);
+  background: var(--primary);
 }
 
 .question-meta {
@@ -2426,7 +2424,7 @@ input:focus-visible {
 
 .continue-button {
   min-width: 185px;
-  background: linear-gradient(135deg, #2B3A2E, #1d65d5);
+  background: var(--primary);
 }
 
 .continue-button span {
@@ -3445,7 +3443,6 @@ input:focus-visible {
 }
 
 .assessment-card {
-  box-shadow: 0 10px 28px rgba(26, 26, 23, .08);
 }
 
 .score-slider {
@@ -3855,7 +3852,7 @@ input:focus-visible {
 .mp-card {
   padding: 20px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   background: #FDFCF9;
 }
 
@@ -3903,8 +3900,8 @@ input:focus-visible {
   padding: 24px 20px;
   text-align: center;
   border: 1px solid var(--border);
-  border-radius: 16px;
-  background: linear-gradient(180deg, #fff, #FDFCF9);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
 }
 
 .mp-kpi-card strong {
@@ -3989,8 +3986,8 @@ input:focus-visible {
 .mp-tabs button {
   padding: 8px 16px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fff;
+  border-radius: var(--radius-sm);
+  background: var(--background);
   color: var(--muted);
   font-size: 13px;
   font-weight: 700;
@@ -3999,8 +3996,8 @@ input:focus-visible {
 }
 
 .mp-tabs button:hover {
-  background: #FDFCF9;
-  border-color: #c7d6eb;
+  background: var(--surface);
+  border-color: var(--primary);
 }
 
 .mp-tabs button.active {
@@ -4047,7 +4044,7 @@ input:focus-visible {
   display: grid;
   place-items: center;
   padding: 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 24px;
   font-weight: 800;
   color: #fff;
@@ -4387,8 +4384,7 @@ input:focus-visible {
 .emi-card {
   background: #fff;
   border: 1px solid var(--border);
-  border-radius: 24px;
-  box-shadow: var(--shadow);
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -4911,9 +4907,10 @@ input:focus-visible {
   place-items: center;
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: 50%;
   color: var(--primary);
-  background: var(--primary-soft);
+  background: transparent;
+  border: 1px solid var(--border);
   font-size: 20px;
   font-weight: 800;
   flex-shrink: 0;
@@ -5047,27 +5044,27 @@ input:focus-visible {
 }
 
 .impact-badge-negative-strong {
-  color: #b3261e;
-  background: #fee8e7;
-  border: 1px solid #fcced0;
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
 }
 
 .impact-badge-negative-mod {
-  color: #b7541f;
-  background: #feebc8;
-  border: 1px solid #fbd38d;
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
 }
 
 .impact-badge-negative-low {
-  color: #976e19;
-  background: #fefcbf;
-  border: 1px solid #f7e685;
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 25%, transparent);
 }
 
 .impact-badge-positive {
-  color: #1b6c4e;
-  background: #def7ec;
-  border: 1px solid #bcf0da;
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
 }
 
 /* User Value Pill in Trigger */
@@ -5423,7 +5420,7 @@ input:focus-visible {
   padding: 0 28px;
   border-radius: 13px;
   color: #fff;
-  background: linear-gradient(135deg, #0b5c97, #002b54);
+  background: var(--primary);
   border: 1.5px solid #08436e;
   font-size: 14.5px;
   font-weight: 800;
@@ -5763,7 +5760,7 @@ body[data-theme="dark"] {
   }
 
   .download-report-button {
-    background: linear-gradient(135deg, #2B3A2E, #1d4ed8) !important;
+    background: var(--primary) !important;
     border-color: #5C7A62 !important;
     box-shadow: 0 8px 24px rgba(43, 58, 46, 0.3) !important;
   }
@@ -6308,24 +6305,22 @@ body[data-theme="dark"] {
 .fresh-bubble {
   max-width: 80%;
   padding: 14px 18px;
-  border-radius: 16px;
+  border-radius: var(--radius-sm);
   font-size: 13.5px;
   line-height: 1.55;
 }
 
 .bubble-bot {
-  background: #FDFCF9;
-  border: 1px solid #dce8f5;
+  background: var(--surface);
+  border: 1px solid var(--border);
   color: var(--navy);
   border-bottom-left-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
 .bubble-user {
-  background: linear-gradient(135deg, var(--primary), #1f2b22);
+  background: var(--primary);
   color: #ffffff;
   border-bottom-right-radius: 4px;
-  box-shadow: 0 4px 14px rgba(43, 58, 46, 0.18);
 }
 
 .bubble-error {
@@ -6982,10 +6977,8 @@ body[data-theme="dark"] .tooltip-primary {
 .quiz-glass-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   padding: 38px 34px;
-  box-shadow: var(--shadow);
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 body[data-theme="dark"] .quiz-glass-card {
@@ -7096,7 +7089,7 @@ body[data-theme="dark"] .quiz-progress-track {
 
 .quiz-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3F6B4E, #589A6D);
+  background: var(--primary);
   border-radius: 99px;
   transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -7126,7 +7119,7 @@ body[data-theme="dark"] .quiz-question-heading {
   align-items: flex-start;
   gap: 14px;
   padding: 16px 18px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   border: 1.5px solid var(--border);
   background: var(--surface);
   color: var(--navy);
@@ -8331,4 +8324,4 @@ body[data-theme="dark"] .fab-tooltip {
   }
 }
 
-
+

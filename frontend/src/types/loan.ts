@@ -108,7 +108,7 @@ export interface NTCApplication {
   | "Skilled Labor";
 
   annual_income: number;
-
+  monthly_expenses: number;
   loan_amount: number;
 
   loan_tenure: number;
@@ -127,8 +127,10 @@ export interface NTCShapExplanation {
   impact: number;
 }
 
-export interface NTCPredictionResponse
-  extends PredictionResponse {
+export interface NTCPredictionResponse extends PredictionResponse {
   confidence: number;
   shap_explanation: NTCShapExplanation[];
+  monthly_income: number;
+  disposable_income: number;
+  expense_ratio: number;
 }

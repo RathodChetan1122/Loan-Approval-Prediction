@@ -609,7 +609,7 @@ export default function AiLoanAssistant({
                 <div className="popular-card-category">{item.category}</div>
                 <strong className="popular-card-heading">{item.title}</strong>
                 <p className="popular-card-desc">{item.prompt}</p>
-                <span className="popular-card-action">Ask →</span>
+                <span className="popular-card-action">Ask</span>
               </button>
             ))}
           </div>

@@ -80,8 +80,8 @@ export default function FinancialQuiz({
           STAGE 1: INTRO SCREEN
       ========================================================================== */}
       {stage === "intro" && (
-        <div className="quiz-glass-card" style={{ textAlign: "center" }}>
-          <div className="quiz-badge-pill">
+        <div className="assessment-card" style={{ textAlign: "center" }}>
+          <div className="assessment-eyebrow">
             <span>🎯 Financial Knowledge Arena</span>
           </div>
 
@@ -171,7 +171,7 @@ export default function FinancialQuiz({
           STAGE 2: ACTIVE QUESTION STEPPER
       ========================================================================== */}
       {stage === "active" && currentQuestion && (
-        <div className="quiz-glass-card">
+        <div className="assessment-card">
           {/* Header & Progress */}
           <div
             style={{
@@ -337,7 +337,7 @@ export default function FinancialQuiz({
           STAGE 3: COMPLETED RESULTS SCREEN
       ========================================================================== */}
       {stage === "completed" && (
-        <div className="quiz-glass-card">
+        <div className="assessment-card">
           {/* Header Banner with Animated Circular Gauge */}
           <div style={{ textAlign: "center", marginBottom: 32 }}>
             <div className="quiz-score-circle-wrapper">
