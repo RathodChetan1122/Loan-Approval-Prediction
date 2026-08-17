@@ -1,7 +1,41 @@
 from pathlib import Path
 
+import sys
+
 import joblib
+import numpy as np
 import pandas as pd
+
+# Compatibility shims for loading scikit-learn 1.6.1 serialized pipelines
+# across varied Python/scikit-learn runtime versions without altering model artifacts.
+try:
+    import sklearn.compose._column_transformer
+    if not hasattr(sklearn.compose._column_transformer, "_RemainderColsList"):
+        class _RemainderColsList(list):
+            pass
+        sklearn.compose._column_transformer._RemainderColsList = _RemainderColsList
+except Exception:
+    pass
+
+try:
+    import sklearn._loss
+    if not hasattr(sklearn._loss, "CyHalfBinomialLoss"):
+        sklearn._loss.CyHalfBinomialLoss = getattr(
+            sklearn._loss, "HalfBinomialLoss", None
+        )
+    if "_loss" not in sys.modules:
+        sys.modules["_loss"] = sklearn._loss
+except Exception:
+    pass
+
+try:
+    import sklearn.impute._base
+    if not hasattr(sklearn.impute._base.SimpleImputer, "_fill_dtype"):
+        sklearn.impute._base.SimpleImputer._fill_dtype = property(
+            lambda self: getattr(self, "_fit_dtype", np.float64)
+        )
+except Exception:
+    pass
 
 try:
     import shap
