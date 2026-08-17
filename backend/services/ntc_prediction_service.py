@@ -145,6 +145,7 @@ def _get_shap_explanation(input_data: pd.DataFrame) -> list[dict]:
         except Exception:
             return []
 
+
 def evaluate_ntc_candidates(candidates: list[int], base_data: dict, pipeline_model) -> dict[int, float]:
     if not candidates:
         return {}

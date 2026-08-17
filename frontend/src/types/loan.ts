@@ -80,7 +80,6 @@ export interface PredictionResponse {
   explanation?: LoanExplanation;
 
   loan_amount_analysis?: LoanAmountAnalysis;
-
   requested_loan_amount?: number;
   maximum_eligible_amount?: number | null;
   maximum_eligible_prediction?: string;

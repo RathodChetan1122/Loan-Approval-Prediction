@@ -30,7 +30,6 @@ class LoanApplication(BaseModel):
         if value not in allowed_values:
             raise ValueError(
                 "employment_type must be one of: "
-                
                 f"{sorted(allowed_values)}"
             )
 
