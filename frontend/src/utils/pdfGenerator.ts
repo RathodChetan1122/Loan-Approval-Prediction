@@ -250,12 +250,12 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
   ];
   
   if (isNTC) {
-    const ntcApp = application as any;
-    const ntcRes = result as any;
-    applicantRows.push({ label: "Monthly Income:", val: formatInr(ntcRes.monthly_income || (ntcApp.annual_income / 12)) });
-    applicantRows.push({ label: "Monthly Expenses:", val: formatInr(ntcApp.monthly_expenses || 0) });
-    applicantRows.push({ label: "Disposable Income:", val: formatInr(ntcRes.disposable_income || 0) });
-    applicantRows.push({ label: "Expense Ratio:", val: `${(ntcRes.expense_ratio || 0).toFixed(1)}%` });
+    const ntcApp = application as Record<string, unknown>;
+    const ntcRes = result as Record<string, unknown>;
+    applicantRows.push({ label: "Monthly Income:", val: formatInr(Number(ntcRes.monthly_income) || (Number(ntcApp.annual_income) / 12)) });
+    applicantRows.push({ label: "Monthly Expenses:", val: formatInr(Number(ntcApp.monthly_expenses) || 0) });
+    applicantRows.push({ label: "Disposable Income:", val: formatInr(Number(ntcRes.disposable_income) || 0) });
+    applicantRows.push({ label: "Expense Ratio:", val: `${(Number(ntcRes.expense_ratio) || 0).toFixed(1)}%` });
   } else {
     applicantRows.push({ label: "Credit Score (CIBIL):", val: creditScoreVal });
   }
@@ -323,8 +323,8 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
     doc.setTextColor(15, 23, 42);
     doc.text("ESTIMATED LOAN CAPACITY", marginX + 6, currentY + 7);
 
-    let leftText = `Requested Amount: ${formatInr(whatIf.currentAmount)}\nStatus: ${isApproved ? "Approved" : "Rejected"}`;
-    let rightText = "";
+    const leftText = `Requested Amount: ${formatInr(whatIf.currentAmount)}\nStatus: ${isApproved ? "Approved" : "Rejected"}`;
+    let rightText: string;
     
     if (whatIf.recommendedAmount > 0) {
       rightText = `Maximum Predicted Eligible Amount: ${formatInr(whatIf.recommendedAmount)}\nApproval probability at this amount: ${whatIf.recommendedApprovalProbability.toFixed(1)}%`;
@@ -353,7 +353,7 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
   // 3.6 NTC ESTIMATED LOAN CAPACITY
   // ==========================================================
   if (isNTC && "maximum_eligible_amount" in result) {
-    const ntcRes = result as any;
+    const ntcRes = result as Record<string, unknown>;
     checkPageBreak(35);
     
     doc.setFillColor(248, 250, 252);
@@ -365,13 +365,13 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
     doc.setTextColor(15, 23, 42);
     doc.text("NTC ESTIMATED LOAN CAPACITY", marginX + 6, currentY + 7);
 
-    let leftText = `Requested Amount: ${formatInr(ntcRes.requested_loan_amount)}\nStatus: ${ntcRes.prediction}`;
-    let rightText = "";
+    const leftText = `Requested Amount: ${formatInr(Number(ntcRes.requested_loan_amount))}\nStatus: ${ntcRes.prediction}`;
+    let rightText: string;
     
     if (ntcRes.maximum_eligible_amount !== null) {
-      rightText = `Maximum Predicted Eligible Amount: ${formatInr(ntcRes.maximum_eligible_amount)}\nApproval probability at this amount: ${(ntcRes.max_eligible_approved_probability * 100).toFixed(1)}%`;
-      if (ntcRes.maximum_eligible_amount < ntcRes.requested_loan_amount) {
-        rightText += `\nSuggested Reduction: ${formatInr(ntcRes.requested_loan_amount - ntcRes.maximum_eligible_amount)}`;
+      rightText = `Maximum Predicted Eligible Amount: ${formatInr(Number(ntcRes.maximum_eligible_amount))}\nApproval probability at this amount: ${(Number(ntcRes.max_eligible_approved_probability) * 100).toFixed(1)}%`;
+      if (Number(ntcRes.maximum_eligible_amount) < Number(ntcRes.requested_loan_amount)) {
+        rightText += `\nSuggested Reduction: ${formatInr(Number(ntcRes.requested_loan_amount) - Number(ntcRes.maximum_eligible_amount))}`;
       }
     } else {
       rightText = `Maximum Predicted Eligible Amount: No eligible amount found`;

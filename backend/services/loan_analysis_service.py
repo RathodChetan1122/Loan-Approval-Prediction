@@ -166,7 +166,9 @@ def generate_loan_amount_analysis(
     sorted_amts = sorted(all_evaluated.keys())
     
     # Always include the requested amount and the recommended amount
-    key_amts = {requested_amount, recommended_amount}
+    key_amts = {requested_amount}
+    if recommended_amount is not None:
+        key_amts.add(recommended_amount)
     
     # Thin out the rest to keep the table clean
     if len(sorted_amts) > 10:

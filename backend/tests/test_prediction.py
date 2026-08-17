@@ -201,6 +201,7 @@ def test_ntc_prediction_contains_shared_explainability_format():
         "loan_amount": 600000,
         "loan_tenure": 10,
         "education": "Graduate",
+        "monthly_expenses": 30000,
     }
 
     response = client.post("/new-predict", json=ntc_application)

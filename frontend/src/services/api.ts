@@ -630,7 +630,7 @@ function simulateClientSideLoanPrediction(
     } = app;
 
     // 1. Credit Score Contribution (-0.45 to +0.45)
-    let creditScoreContrib = 0;
+    let creditScoreContrib: number;
     if (credit_score >= 800) creditScoreContrib = 0.42;
     else if (credit_score >= 750) creditScoreContrib = 0.32;
     else if (credit_score >= 700) creditScoreContrib = 0.18;
@@ -641,7 +641,7 @@ function simulateClientSideLoanPrediction(
 
     // 2. Loan to Income Ratio (-0.40 to +0.25)
     const loanToIncome = loan_amount / Math.max(annual_income, 1);
-    let ltiContrib = 0;
+    let ltiContrib: number;
     if (loanToIncome <= 1.5) ltiContrib = 0.26;
     else if (loanToIncome <= 2.5) ltiContrib = 0.16;
     else if (loanToIncome <= 3.5) ltiContrib = 0.02;
@@ -662,10 +662,10 @@ function simulateClientSideLoanPrediction(
     else if (loan_tenure < 3 && loanToIncome > 2.5) tenureContrib = -0.12;
 
     // 5. Dependents Contribution
-    let depContrib = dependents <= 1 ? 0.04 : dependents === 2 ? 0.0 : -0.08;
+    const depContrib = dependents <= 1 ? 0.04 : dependents === 2 ? 0.0 : -0.08;
 
     // 6. Education Contribution
-    let eduContrib =
+    const eduContrib =
         education === "PhD" || education === "Post Graduate"
             ? 0.06
             : education === "Graduate"
