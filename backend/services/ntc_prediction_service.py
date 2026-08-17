@@ -83,6 +83,35 @@ def _get_shap_explanation(input_data: pd.DataFrame) -> list[dict]:
     except Exception:
         return []
 
+def evaluate_ntc_candidates(candidates: list[int], base_data: dict, pipeline_model) -> dict[int, float]:
+    if not candidates:
+        return {}
+    
+    # Build dataframe
+    df = pd.DataFrame([
+        {
+            "Education": base_data["education"],
+            "Dependents": base_data["dependents"],
+            "Employment_Type": base_data["employment_type"],
+            "Annual_Income": base_data["annual_income"],
+            "Monthly_Expenses": base_data["monthly_expenses"],
+            "Loan_Amount": amt,
+            "Loan_Tenure": base_data["loan_tenure"],
+        }
+        for amt in candidates
+    ])
+    
+    probs = pipeline_model.predict_proba(df)
+    
+    classes = list(pipeline_model.classes_)
+    approved_index = classes.index("Approved") if "Approved" in classes else 1
+    
+    results = {}
+    for i, amt in enumerate(candidates):
+        results[amt] = float(probs[i][approved_index])
+        
+    return results
+
 
 def predict_ntc(data: dict):
     input_data = pd.DataFrame([{
@@ -106,8 +135,9 @@ def predict_ntc(data: dict):
         input_data
     )[0]
 
-    approved_index = target_mapping["Approved"]
-    rejected_index = target_mapping["Rejected"]
+    classes = list(pipeline.classes_)
+    approved_index = classes.index("Approved") if "Approved" in classes else 1
+    rejected_index = classes.index("Rejected") if "Rejected" in classes else 0
 
     approved_probability = float(
         probabilities[approved_index]
@@ -242,13 +272,83 @@ def predict_ntc(data: dict):
     }
 
     suggestions = generate_ntc_suggestions(
-        data
+        data, loan_status
     )
 
     monthly_income = data["annual_income"] / 12
     monthly_expenses = data["monthly_expenses"]
     disposable_income = monthly_income - monthly_expenses
     expense_ratio = (monthly_expenses / monthly_income) * 100 if monthly_income > 0 else 0
+
+    # --------------------------------------------------------
+    # NTC Maximum Predicted Eligible Loan Analysis
+    # --------------------------------------------------------
+    requested_amount = int(data["loan_amount"])
+    threshold = 0.50
+    
+    maximum_eligible_amount = None
+    max_eligible_approved_probability = 0.0
+    
+    if loan_status == "Approved" and approved_probability >= threshold:
+        # Case 1: Requested amount is approved
+        maximum_eligible_amount = requested_amount
+        max_eligible_approved_probability = approved_probability
+        max_loan_status = "eligible"
+        max_loan_message = f"Based on your current applicant profile, the existing ML model predicts approval for your requested amount of ₹{requested_amount:,}."
+        max_prediction = "Approved"
+    else:
+        # Case 2/3: Requested amount is rejected, search downward
+        coarse_step = max(50000, requested_amount // 10)
+        coarse_step = max(50000, (coarse_step // 50000) * 50000)
+        
+        coarse_candidates = []
+        cand = requested_amount - coarse_step
+        while cand > 0 and len(coarse_candidates) < 10:
+            coarse_candidates.append(cand)
+            cand -= coarse_step
+            
+        coarse_res = evaluate_ntc_candidates(coarse_candidates, data, pipeline)
+        
+        favorable_boundary = None
+        unfavorable_boundary = requested_amount
+        
+        for amt in coarse_candidates:
+            if coarse_res[amt] >= threshold:
+                favorable_boundary = amt
+                break
+            else:
+                unfavorable_boundary = amt
+                
+        # Fine search
+        if favorable_boundary and (unfavorable_boundary - favorable_boundary) > 10000:
+            fine_step = (unfavorable_boundary - favorable_boundary) // 5
+            fine_step = max(10000, (fine_step // 10000) * 10000)
+            
+            fine_candidates = []
+            cand = favorable_boundary + fine_step
+            while cand < unfavorable_boundary:
+                fine_candidates.append(cand)
+                cand += fine_step
+                
+            fine_res = evaluate_ntc_candidates(fine_candidates, data, pipeline)
+            
+            for amt in fine_candidates:
+                if fine_res[amt] >= threshold:
+                    favorable_boundary = amt
+                    
+        if favorable_boundary is not None:
+            maximum_eligible_amount = favorable_boundary
+            max_eligible_approved_probability = coarse_res.get(favorable_boundary, fine_res.get(favorable_boundary, 0.0))
+            max_loan_status = "eligible"
+            reduction = requested_amount - favorable_boundary
+            max_loan_message = f"Your requested amount is above the model's predicted eligible amount. A lower amount of approximately ₹{favorable_boundary:,} received an approved model prediction."
+            max_prediction = "Approved"
+        else:
+            maximum_eligible_amount = None
+            max_eligible_approved_probability = 0.0
+            max_loan_status = "none_eligible"
+            max_loan_message = "Based on your current applicant profile, the existing ML model does not predict approval for any evaluated loan amount up to your requested amount."
+            max_prediction = "Rejected"
 
     return {
         "prediction": loan_status,
@@ -261,12 +361,12 @@ def predict_ntc(data: dict):
             rejected_probability,
             4,
         ),
-        "requested_loan_amount": int(data["loan_amount"]),
-        "maximum_eligible_amount": 0,
-        "maximum_eligible_prediction": loan_status,
-        "max_eligible_approved_probability": round(approved_probability, 4),
-        "max_loan_status": "eligible" if loan_status == "Approved" else "none_eligible",
-        "max_loan_message": "NTC model estimate based on the submitted application profile.",
+        "requested_loan_amount": requested_amount,
+        "maximum_eligible_amount": maximum_eligible_amount,
+        "maximum_eligible_prediction": max_prediction,
+        "max_eligible_approved_probability": round(max_eligible_approved_probability, 4),
+        "max_loan_status": max_loan_status,
+        "max_loan_message": max_loan_message,
         "explanation": explanation,
         "shap_explanation": shap_explanation,
         "suggestions": suggestions,

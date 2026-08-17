@@ -102,12 +102,7 @@ export const getMaxEligibleLoan = async (
     } catch {
         const pred = simulateClientSideLoanPrediction(application);
         return {
-            requested_loan_amount: application.loan_amount,
-            maximum_eligible_amount: pred.maximum_eligible_amount ?? 2500000,
-            maximum_eligible_prediction: (pred.maximum_eligible_amount ?? 0) >= application.loan_amount ? "Approved" : "Rejected",
-            max_eligible_approved_probability: pred.max_eligible_approved_probability ?? 0.85,
-            max_loan_status: pred.max_loan_status ?? "eligible",
-            max_loan_message: pred.max_loan_message ?? "Estimated eligible amount calculated.",
+            loan_amount_analysis: pred.loan_amount_analysis!
         };
     }
 };
@@ -720,7 +715,7 @@ function simulateClientSideLoanPrediction(
         suggestions.push("Ensure your disposable monthly income comfortably covers repayment obligations alongside household expenses.");
     }
     if (suggestions.length === 0) {
-        suggestions.push("Your financial profile satisfies prime eligibility guidelines based on our machine learning evaluation.");
+        suggestions.push("Your application received a favorable assessment from our machine-learning model based on the information provided.");
     }
 
     // SHAP Factors
@@ -815,12 +810,25 @@ function simulateClientSideLoanPrediction(
             action_plan: actionPlan,
             disclaimer: "Assessment generated via ML risk model. Formal approval subject to lender verification.",
         },
-        requested_loan_amount: loan_amount,
-        maximum_eligible_amount: maxEligibleAmount,
-        maximum_eligible_prediction: maxEligibleAmount >= loan_amount ? "Approved" : "Rejected",
-        max_eligible_approved_probability: Math.min(approvedProb + 0.08, 0.96),
-        max_loan_status: "eligible",
-        max_loan_message: `Based on your profile, you may qualify for up to ₹${maxEligibleAmount.toLocaleString("en-IN")}.`,
+        loan_amount_analysis: {
+            mode: isApproved ? "UPWARD_CAPACITY" : "DOWNWARD_IMPROVEMENT",
+            currentAmount: loan_amount,
+            recommendedAmount: maxEligibleAmount,
+            recommendedApprovalProbability: Math.min(approvedProb + 0.08, 0.96) * 100,
+            threshold: 50.0,
+            scenarios: [
+                {
+                    loanAmount: loan_amount,
+                    approvalProbability: approvedProb * 100,
+                    status: isApproved ? "ELIGIBLE" : "NOT_ELIGIBLE"
+                },
+                {
+                    loanAmount: maxEligibleAmount,
+                    approvalProbability: Math.min(approvedProb + 0.08, 0.96) * 100,
+                    status: "ELIGIBLE"
+                }
+            ]
+        }
     };
 }
 
@@ -850,6 +858,12 @@ function simulateClientSideNTCPrediction(
         monthly_income,
         disposable_income,
         expense_ratio,
+        requested_loan_amount: app.loan_amount,
+        maximum_eligible_amount: standard.prediction === 'Approved' ? app.loan_amount : null,
+        maximum_eligible_prediction: standard.prediction,
+        max_eligible_approved_probability: standard.approved_probability,
+        max_loan_status: standard.prediction === 'Approved' ? 'eligible' : 'none_eligible',
+        max_loan_message: 'Mock estimation based on the submitted application profile.'
     };
 }
 

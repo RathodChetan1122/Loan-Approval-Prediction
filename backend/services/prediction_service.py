@@ -47,8 +47,7 @@ try:
 except Exception:
     pass
 
-from services.max_loan_service import find_maximum_eligible_loan
-from services.suggestion_service import generate_suggestions
+from services.loan_analysis_service import generate_loan_amount_analysis
 from services.suggestion_service import generate_suggestions
 
 
@@ -195,10 +194,10 @@ def predict_loan(application_data: dict[str, Any]) -> dict[str, Any]:
     )
 
     # --------------------------------------------------------
-    # Evaluate Maximum Eligible Loan Amount
+    # Evaluate Loan Amount What-If Scenarios
     # --------------------------------------------------------
 
-    max_loan_info = find_maximum_eligible_loan(
+    loan_amount_analysis = generate_loan_amount_analysis(
         application_data=application_data,
         model=model,
         encoders=encoders,
@@ -217,26 +216,19 @@ def predict_loan(application_data: dict[str, Any]) -> dict[str, Any]:
         ),
         "suggestions": suggestions,
         "explanation": explanation,
-        "requested_loan_amount": max_loan_info["requested_loan_amount"],
-        "maximum_eligible_amount": max_loan_info["maximum_eligible_amount"],
-        "maximum_eligible_prediction": max_loan_info["maximum_eligible_prediction"],
-        "max_eligible_approved_probability": max_loan_info[
-            "max_eligible_approved_probability"
-        ],
-        "max_loan_status": max_loan_info["max_loan_status"],
-        "max_loan_message": max_loan_info["max_loan_message"],
+        "loan_amount_analysis": loan_amount_analysis,
     }
 
 
 def estimate_maximum_loan(application_data: dict[str, Any]) -> dict[str, Any]:
     """
-    Dedicated calculation for maximum eligible loan amount.
+    Dedicated calculation for loan amount what-if analysis.
     """
-    return find_maximum_eligible_loan(
-    application_data=application_data,
-    model=model,
-    encoders=encoders,
-    features=FEATURES,
+    return generate_loan_amount_analysis(
+        application_data=application_data,
+        model=model,
+        encoders=encoders,
+        features=FEATURES,
     )
 
 

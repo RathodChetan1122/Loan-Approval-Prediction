@@ -39,27 +39,13 @@ export default function PredictionResult({ result, initialApplication, onReset }
   const rejected = result.rejected_probability * 100;
   const isApproved = result.prediction === "Approved";
   const decisionProbability = isApproved ? approved : rejected;
-  // Maximum Predicted Eligible Loan Amount
+  const isNTC = initialApplication && 'monthly_expenses' in initialApplication;
+  const whatIf = result.loan_amount_analysis;
+
   const requestedAmount =
-    result.requested_loan_amount ??
     initialApplication?.loan_amount ??
+    whatIf?.currentAmount ??
     0;
-
-  const maxEligibleAmount =
-    result.maximum_eligible_amount ?? 0;
-
-  const maxEligibleProb =
-    (result.max_eligible_approved_probability ?? 0) * 100;
-
-  const maxLoanStatus =
-    result.max_loan_status ??
-    (maxEligibleAmount > 0
-      ? "eligible"
-      : "none_eligible");
-
-  const isRequestedAboveMax =
-    maxLoanStatus !== "none_eligible" &&
-    requestedAmount > maxEligibleAmount;
 
   const formatINR = (amount: number) =>
     `₹${amount.toLocaleString("en-IN")}`;
@@ -124,13 +110,6 @@ export default function PredictionResult({ result, initialApplication, onReset }
     return "impact-badge-negative-low";
   };
 
-  const getImpactDot = (direction: string, level: string) => {
-    if (direction === "positive") return "🟢";
-    if (level.includes("Strong")) return "🔴";
-    if (level.includes("Moderate")) return "🟠";
-    return "🟡";
-  };
-
   return (
     <section className={`result-page ${isApproved ? "result-approved" : "result-rejected"}`}>
       {/* 1. Main Decision Card */}
@@ -141,7 +120,7 @@ export default function PredictionResult({ result, initialApplication, onReset }
         </div>
         <h1>Loan eligibility result</h1>
         <strong className="decision-title">
-          {isApproved ? "LIKELY ELIGIBLE" : "PREDICTED NOT ELIGIBLE"}
+          {isApproved ? "LIKELY ELIGIBLE" : "LIKELY NOT ELIGIBLE"}
         </strong>
         <p>
           {isApproved
@@ -245,121 +224,158 @@ export default function PredictionResult({ result, initialApplication, onReset }
         </section>
       )}
 
-      {/* 3. Maximum Predicted Eligible Loan Amount */}
-      <section
-        className="max-loan-panel"
-        aria-labelledby="max-loan-title"
-      >
-        <header className="max-loan-header">
-          <div
-            className="max-loan-icon"
-            aria-hidden="true"
-          >
-            ₹
-          </div>
+      {/* 2.6 NTC Estimated Loan Capacity */}
+      {isNTC && 'maximum_eligible_amount' in result && (
+        <section className="max-loan-panel" aria-labelledby="ntc-capacity-title" style={{ marginTop: '24px' }}>
+          <header className="max-loan-header">
+            <div className="max-loan-icon" aria-hidden="true">₹</div>
+            <div>
+              <span className="max-loan-eyebrow">MODEL CAPACITY ESTIMATION</span>
+              <h2 id="ntc-capacity-title">Estimated Loan Capacity</h2>
+            </div>
+          </header>
 
-          <div>
-            <span className="max-loan-eyebrow">
-              MODEL CAPACITY ESTIMATION
-            </span>
+          <div className="max-loan-grid">
+            <div className="max-loan-metric-card requested-metric">
+              <span className="metric-label">Your Requested Amount</span>
+              <strong className="metric-value">{formatINR((result as NTCPredictionResponse).requested_loan_amount)}</strong>
+              <span className="prob-pill">Status: {(result as NTCPredictionResponse).prediction}</span>
+            </div>
 
-            <h2 id="max-loan-title">
-              Maximum Predicted Eligible Loan Amount
-            </h2>
-          </div>
-        </header>
-
-        <div className="max-loan-grid">
-
-          <div className="max-loan-metric-card requested-metric">
-            <span className="metric-label">
-              Requested Loan Amount
-            </span>
-
-            <strong className="metric-value">
-              {formatINR(requestedAmount)}
-            </strong>
-
-            <span
-              className={`status-pill ${isApproved
-                ? "pill-approved"
-                : "pill-rejected"
-                }`}
-            >
-              Loan Approval: {result.prediction}
-            </span>
-          </div>
-
-          <div className="max-loan-metric-card eligible-metric">
-            <span className="metric-label">
-              Maximum Predicted Eligible Loan Amount
-            </span>
-
-            <strong className="metric-value">
-              {maxLoanStatus === "none_eligible"
-                ? "₹0"
-                : formatINR(maxEligibleAmount)}
-            </strong>
-
-            {maxLoanStatus !== "none_eligible" &&
-              maxEligibleAmount > 0 ? (
-              <span className="prob-pill">
-                Approved Probability:{" "}
-                {maxEligibleProb.toFixed(1)}%
-              </span>
-            ) : (
-              <span className="status-pill pill-rejected">
-                No Eligible Amount Found
-              </span>
+            <div className="max-loan-metric-card eligible-metric">
+              <span className="metric-label">Maximum Predicted Eligible Amount</span>
+              <strong className="metric-value" style={{ fontSize: (result as NTCPredictionResponse).maximum_eligible_amount === null ? '1.25rem' : undefined }}>
+                {(result as NTCPredictionResponse).maximum_eligible_amount !== null
+                  ? formatINR((result as NTCPredictionResponse).maximum_eligible_amount as number)
+                  : "No eligible amount found"}
+              </strong>
+              {(result as NTCPredictionResponse).maximum_eligible_amount !== null && (
+                <span className="prob-pill">
+                  Approval probability at this amount: {((result as NTCPredictionResponse).max_eligible_approved_probability * 100).toFixed(1)}%
+                </span>
+              )}
+            </div>
+            
+            {(result as NTCPredictionResponse).maximum_eligible_amount !== null && ((result as NTCPredictionResponse).maximum_eligible_amount as number) < (result as NTCPredictionResponse).requested_loan_amount && (
+              <div className="max-loan-metric-card requested-metric" style={{ backgroundColor: '#fff8f1', borderLeftColor: '#f59e0b' }}>
+                <span className="metric-label" style={{ color: '#b45309' }}>Suggested Reduction</span>
+                <strong className="metric-value" style={{ color: '#d97706' }}>
+                  {formatINR((result as NTCPredictionResponse).requested_loan_amount - ((result as NTCPredictionResponse).maximum_eligible_amount as number))}
+                </strong>
+              </div>
             )}
           </div>
 
-        </div>
+          <div className="max-loan-comparison-box comparison-within">
+            <p>{(result as NTCPredictionResponse).max_loan_message}</p>
+          </div>
 
-        <div
-          className={`max-loan-comparison-box ${maxLoanStatus === "none_eligible"
-            ? "comparison-none"
-            : isRequestedAboveMax
-              ? "comparison-above"
-              : "comparison-within"
-            }`}
-        >
-          {maxLoanStatus === "none_eligible" ? (
-            <p>
-              Based on your current applicant profile, the
-              existing ML model does not predict approval for
-              any evaluated loan amount up to your requested
-              amount.
-            </p>
-          ) : isRequestedAboveMax ? (
-            <>
-              <p>
-                Your requested amount is above the model's
-                predicted eligible amount.
-              </p>
+          <small className="max-loan-disclaimer" style={{ display: 'block', marginTop: '16px' }}>
+            This is a model-predicted result based on the provided inputs, not a guaranteed bank loan approval.
+          </small>
+        </section>
+      )}
 
-              <p className="suggested-amount-highlight">
-                Suggested Maximum Amount:{" "}
-                <strong>
-                  {formatINR(maxEligibleAmount)}
+      {/* 3. Loan Amount What-If Analysis */}
+      {whatIf && !isNTC && (
+        <section className="max-loan-panel" aria-labelledby="whatif-title">
+          <header className="max-loan-header">
+            <div className="max-loan-icon" aria-hidden="true">₹</div>
+            <div>
+              <span className="max-loan-eyebrow">MODEL CAPACITY ESTIMATION</span>
+              <h2 id="whatif-title">Estimated Loan Capacity</h2>
+            </div>
+          </header>
+
+          <div className="max-loan-grid">
+            <div className="max-loan-metric-card requested-metric">
+              <span className="metric-label">Your Requested Amount</span>
+              <strong className="metric-value">{formatINR(whatIf.currentAmount)}</strong>
+              <span className="prob-pill">Current Approval Probability: {decisionProbability.toFixed(1)}%</span>
+            </div>
+
+            <div className="max-loan-metric-card eligible-metric">
+              <span className="metric-label">Maximum Predicted Eligible Amount</span>
+              <strong className="metric-value">
+                {whatIf.recommendedAmount > 0 ? formatINR(whatIf.recommendedAmount) : "No eligible amount found"}
+              </strong>
+              {whatIf.recommendedAmount > 0 && (
+                <span className="prob-pill">
+                  Approval probability at this amount: {whatIf.recommendedApprovalProbability.toFixed(1)}%
+                </span>
+              )}
+            </div>
+            
+            {whatIf.recommendedAmount > 0 && whatIf.recommendedAmount < whatIf.currentAmount && (
+              <div className="max-loan-metric-card requested-metric" style={{ backgroundColor: '#fff8f1', borderLeftColor: '#f59e0b' }}>
+                <span className="metric-label" style={{ color: '#b45309' }}>Suggested Reduction</span>
+                <strong className="metric-value" style={{ color: '#d97706' }}>
+                  {formatINR(whatIf.currentAmount - whatIf.recommendedAmount)}
                 </strong>
-              </p>
-            </>
-          ) : (
-            <p>
-              Based on your current applicant profile, the
-              existing ML model predicts approval for your
-              requested amount.
-            </p>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
 
-        <small className="max-loan-disclaimer">
-          This is a model-predicted maximum eligible amount
-          based on the provided inputs, not a guaranteed bank
-          loan approval.
-        </small>
-      </section>
+          <div className="max-loan-comparison-box comparison-within">
+            {isApproved ? (
+              <p>Based on your current applicant profile, the existing ML model predicts approval for your requested amount of <strong>{formatINR(whatIf.currentAmount)}</strong>.</p>
+            ) : (
+              whatIf.recommendedAmount > 0 ? (
+                <p>Your requested amount is above the model's predicted eligible amount. A lower amount of approximately <strong>{formatINR(whatIf.recommendedAmount)}</strong> received an approved model prediction.</p>
+              ) : (
+                <p>Based on your current applicant profile, the existing ML model does not predict approval for any evaluated loan amount up to your requested amount.</p>
+              )
+            )}
+          </div>
+
+          {/* Scenario Table */}
+          <div style={{ marginTop: '24px' }}>
+            <strong style={{ display: 'block', marginBottom: '12px', color: 'var(--navy)', fontSize: '0.875rem' }}>Loan Amount Simulation</strong>
+            <div style={{ backgroundColor: 'white', borderRadius: '6px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                <thead style={{ backgroundColor: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+                  <tr>
+                    <th style={{ padding: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>Loan Amount</th>
+                    <th style={{ padding: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>Model Assessment</th>
+                    <th style={{ padding: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>Approval Probability</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {whatIf.scenarios.map((s, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid var(--border)', backgroundColor: s.loanAmount === whatIf.currentAmount ? 'var(--surface)' : 'transparent' }}>
+                      <td style={{ padding: '12px', fontWeight: s.loanAmount === whatIf.currentAmount ? 600 : 400, color: 'var(--text-body)' }}>
+                        {formatINR(s.loanAmount)} {s.loanAmount === whatIf.currentAmount && "(Requested)"}
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <span style={{ 
+                          fontSize: '0.75rem', 
+                          fontWeight: 600, 
+                          padding: '4px 8px', 
+                          borderRadius: '12px', 
+                          backgroundColor: s.status === 'ELIGIBLE' ? '#DDF4E4' : '#FDE8E4', 
+                          color: s.status === 'ELIGIBLE' ? '#1A6334' : '#992B2B' 
+                        }}>
+                          {s.status === 'ELIGIBLE' ? 'Favorable' : 'Not Favorable'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ flex: 1, height: '6px', backgroundColor: 'var(--surface)', borderRadius: '3px', overflow: 'hidden' }}>
+                          <div style={{ width: `${s.approvalProbability}%`, height: '100%', backgroundColor: s.status === 'ELIGIBLE' ? 'var(--forest-green)' : 'var(--terracotta)' }} />
+                        </div>
+                        <span style={{ width: '40px', textAlign: 'right', color: 'var(--text-secondary)' }}>{s.approvalProbability.toFixed(0)}%</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <small className="max-loan-disclaimer" style={{ display: 'block', marginTop: '16px' }}>
+            This is a model-based simulation, not a lender decision or guarantee of approval.
+          </small>
+        </section>
+      )}
       {/* 4. Rejection Explainability Section */}
       {!isApproved && explanation && (
         <>
@@ -368,10 +384,11 @@ export default function PredictionResult({ result, initialApplication, onReset }
             <header className="explainability-header">
               <span className="explain-icon">◔</span>
               <div>
-                <span className="explain-eyebrow">MODEL EXPLAINABILITY</span>
-                <h2 id="why-result-heading">Why this result?</h2>
+                <span className="explain-eyebrow">ASSESSMENT CONTEXT</span>
+                <h2 id="why-result-heading">Factors Considered in This Assessment</h2>
                 <p>
-                  The model identified a few factors that had the strongest influence on this
+                  The machine learning model evaluated your application and
+                  identified the following primary factors that influenced this
                   assessment.
                 </p>
               </div>
@@ -402,21 +419,10 @@ export default function PredictionResult({ result, initialApplication, onReset }
                       id={accordionId}
                     >
                       <div className="accordion-trigger-left">
-                        <span className="impact-dot" aria-hidden="true">
-                          {getImpactDot(factor.impact_direction, factor.impact_level)}
-                        </span>
                         <span className="accordion-factor-label">{factor.label}</span>
                       </div>
 
                       <div className="accordion-trigger-right">
-                        <span
-                          className={`impact-badge ${getImpactBadgeClass(
-                            factor.impact_level,
-                            factor.impact_direction
-                          )}`}
-                        >
-                          {factor.impact_level}
-                        </span>
                         <span className="accordion-user-pill">
                           <span className="pill-muted">Your value:</span> {factor.user_value}
                         </span>

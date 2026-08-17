@@ -239,7 +239,7 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
   const educationVal = cleanPdfText(application?.education || "Graduate");
   const incomeVal = application?.annual_income ? formatInr(application.annual_income) : "Rs. 6,00,000";
   const creditScoreVal = application?.credit_score ? `${application.credit_score}` : "650 (NTC)";
-  const requestedLoanVal = formatInr(application?.loan_amount || result.requested_loan_amount || 1000000);
+  const requestedLoanVal = formatInr(application?.loan_amount || result.loan_amount_analysis?.currentAmount || 1000000);
   const tenureVal = `${application?.loan_tenure || 5} years`;
 
   const applicantRows = [
@@ -306,6 +306,89 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
   });
 
   currentY += colHeight + 7;
+
+  // ==========================================================
+  // 3.5 LOAN AMOUNT WHAT-IF ANALYSIS
+  // ==========================================================
+  const whatIf = result.loan_amount_analysis;
+  if (whatIf && !isNTC) {
+    checkPageBreak(35);
+    
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(marginX, currentY, contentWidth, 34, 3, 3, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("ESTIMATED LOAN CAPACITY", marginX + 6, currentY + 7);
+
+    let leftText = `Requested Amount: ${formatInr(whatIf.currentAmount)}\nStatus: ${isApproved ? "Approved" : "Rejected"}`;
+    let rightText = "";
+    
+    if (whatIf.recommendedAmount > 0) {
+      rightText = `Maximum Predicted Eligible Amount: ${formatInr(whatIf.recommendedAmount)}\nApproval probability at this amount: ${whatIf.recommendedApprovalProbability.toFixed(1)}%`;
+      if (whatIf.recommendedAmount < whatIf.currentAmount) {
+        rightText += `\nSuggested Reduction: ${formatInr(whatIf.currentAmount - whatIf.recommendedAmount)}`;
+      }
+    } else {
+      rightText = `Maximum Predicted Eligible Amount: No eligible amount found`;
+    }
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.8);
+    doc.setTextColor(71, 85, 105);
+    doc.text(leftText, marginX + 6, currentY + 14);
+    doc.text(rightText, marginX + contentWidth / 2 + 2, currentY + 14);
+    
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    doc.text("* This is a model-based simulation, not a lender decision or guarantee of approval.", marginX + 6, currentY + 30);
+    
+    currentY += 41;
+    currentY += 41;
+  }
+
+  // ==========================================================
+  // 3.6 NTC ESTIMATED LOAN CAPACITY
+  // ==========================================================
+  if (isNTC && "maximum_eligible_amount" in result) {
+    const ntcRes = result as any;
+    checkPageBreak(35);
+    
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(marginX, currentY, contentWidth, 34, 3, 3, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("NTC ESTIMATED LOAN CAPACITY", marginX + 6, currentY + 7);
+
+    let leftText = `Requested Amount: ${formatInr(ntcRes.requested_loan_amount)}\nStatus: ${ntcRes.prediction}`;
+    let rightText = "";
+    
+    if (ntcRes.maximum_eligible_amount !== null) {
+      rightText = `Maximum Predicted Eligible Amount: ${formatInr(ntcRes.maximum_eligible_amount)}\nApproval probability at this amount: ${(ntcRes.max_eligible_approved_probability * 100).toFixed(1)}%`;
+      if (ntcRes.maximum_eligible_amount < ntcRes.requested_loan_amount) {
+        rightText += `\nSuggested Reduction: ${formatInr(ntcRes.requested_loan_amount - ntcRes.maximum_eligible_amount)}`;
+      }
+    } else {
+      rightText = `Maximum Predicted Eligible Amount: No eligible amount found`;
+    }
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.8);
+    doc.setTextColor(71, 85, 105);
+    doc.text(leftText, marginX + 6, currentY + 14);
+    doc.text(rightText, marginX + contentWidth / 2 + 2, currentY + 14);
+    
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    doc.text("* " + ntcRes.max_loan_message, marginX + 6, currentY + 30);
+    
+    currentY += 41;
+  }
 
   // ==========================================================
   // 4. MODEL EXPLAINABILITY / WHY THIS RESULT?
