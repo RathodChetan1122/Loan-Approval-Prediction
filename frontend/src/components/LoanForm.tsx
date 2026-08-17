@@ -52,25 +52,136 @@ export default function LoanForm({ onSubmit, loading }: Props) {
   const pickEmployment = (value: LoanApplication["employment_type"]) => setValue("employment_type", value, { shouldTouch: true, shouldValidate: true });
   const pickEducation = (value: LoanApplication["education"]) => setValue("education", value, { shouldTouch: true, shouldValidate: true });
   const error = errors[step.field]?.message;
-  return <form className="assessment-form" onSubmit={(event) => event.preventDefault()}>
-    <div className="progress-area"><div className="progress-top"><span>Question <strong>{currentStep + 1}</strong> of 7</span><span>{progress}%</span></div><div className="progress-track" role="progressbar" aria-valuenow={currentStep + 1} aria-valuemin={1} aria-valuemax={7}><div className="progress-fill" style={{ width: `${progress}%` }} /></div></div>
-    <section className={`question-container ${step.field === "credit_score" ? "credit-score-question" : ""}`} key={step.field} aria-live="polite">
-      <div className="question-meta"><span className="question-number">{String(currentStep + 1).padStart(2, "0")}</span><span className="question-eyebrow">{step.eyebrow}</span><span className="question-icon" aria-hidden="true">{step.icon}</span></div>
-      <div className="question-heading-row"><h3>{step.question}</h3><button type="button" className="help-button" aria-label="Show information" aria-expanded={helpOpen} onClick={() => setHelpOpen((open) => !open)}>?</button></div>
-      <p className="question-description">{step.description}</p>
-      {helpOpen && <aside className="help-card"><span className="help-card-icon">i</span><div><strong>{step.helpTitle}</strong><p>{step.help}</p></div><button type="button" aria-label="Close information" className="help-close" onClick={() => setHelpOpen(false)}>×</button></aside>}
-      {step.field === "dependents" && <div className="number-options">{[0, 1, 2, 3].map((value) => <button key={value} type="button" className={`number-option ${values.dependents === value ? "selected" : ""}`} aria-pressed={values.dependents === value} onClick={() => pickDependents(value)}><b>{value}</b><small>{value === 0 ? "None" : value === 1 ? "Person" : "People"}</small>{values.dependents === value && <i>✓</i>}</button>)}</div>}
-      {step.field === "employment_type" && <div className="option-grid">{employment.map(([value, icon, detail]) => <button key={value} type="button" className={`choice-card ${values.employment_type === value ? "selected" : ""}`} aria-pressed={values.employment_type === value} onClick={() => pickEmployment(value)}><span className="choice-icon">{icon}</span><span><b>{value}</b><small>{detail}</small></span>{values.employment_type === value && <i className="choice-check">✓</i>}</button>)}</div>}
-      {step.field === "annual_income" && <CurrencyInput label="Annual income" placeholder="6,00,000" registration={register("annual_income", { valueAsNumber: true })} hint="Example: ₹6,00,000 per year" />}
-      {step.field === "loan_amount" && <CurrencyInput label="Loan amount" placeholder="15,00,000" registration={register("loan_amount", { valueAsNumber: true })} hint="Requested principal amount" />}
-      {step.field === "credit_score" && <section className="credit-score-card" aria-label="Credit score selection"><CreditScoreGauge score={score} /><div className="slider-section"><div className="credit-score-instruction"><strong>Move the slider to your latest CIBIL score</strong><b>{status}</b></div><input aria-label="Credit score" type="range" min="300" max="900" step="1" className="custom-range credit-range" style={{ "--range-progress": `${((score - 300) / 600) * 100}%` } as React.CSSProperties} {...register("credit_score", { valueAsNumber: true })} /><div className="range-labels credit-range-labels"><span>300</span><span>450</span><span>600</span><span>750</span><span>900</span></div></div></section>}
-      {step.field === "loan_tenure" && <div className="slider-area"><div className="score-display"><span>Repayment period</span><strong>{tenure} <small>years</small></strong></div><input aria-label="Loan tenure in years" type="range" min="2" max="30" step="1" className="custom-range" style={{ "--range-progress": `${((tenure - 2) / 28) * 100}%` } as React.CSSProperties} {...register("loan_tenure", { valueAsNumber: true })} /><div className="range-labels"><span>2 years</span><span>16 years</span><span>30 years</span></div><p className="slider-hint">Choose a comfortable repayment period.</p></div>}
-      {step.field === "education" && <div className="education-grid">{education.map(([value, icon]) => <button key={value} type="button" className={`education-card ${values.education === value ? "selected" : ""}`} aria-pressed={values.education === value} onClick={() => pickEducation(value)}><span>{icon}</span><b>{value}</b>{values.education === value && <i className="education-check">✓</i>}</button>)}</div>}
-      {error && <p className="field-error" role="alert"><span>!</span>{error}</p>}
-    </section>
-    <nav className="form-navigation" aria-label="Assessment navigation"><button type="button" className="back-button" disabled={currentStep === 0 || loading} onClick={() => { setHelpOpen(false); setCurrentStep((value) => Math.max(0, value - 1)); }}>← <span>Back</span></button><button type="button" className="continue-button" disabled={loading} onClick={moveNext}>{loading ? "Analyzing..." : currentStep === 6 ? "Check eligibility ✓" : <>Continue <span>→</span></>}</button></nav>
-    <p className="assessment-note">⌑ Your answers are processed securely for this assessment.</p>
-  </form>;
+  return (
+    <div className="assessment-wrapper">
+      <div className="assessment-card">
+        <header className="assessment-header">
+          <div>
+            <span className="assessment-eyebrow">ELIGIBILITY ASSESSMENT</span>
+            <h2>Personal Loan Assessment</h2>
+          </div>
+          <span className="assessment-icon" aria-hidden="true">₹</span>
+        </header>
+
+        <form className="assessment-form" onSubmit={(event) => event.preventDefault()}>
+          <div className="progress-area">
+            <div className="progress-top">
+              <span>Question <strong>{currentStep + 1}</strong> of 7</span>
+              <span>{progress}%</span>
+            </div>
+            <div className="progress-track" role="progressbar" aria-valuenow={currentStep + 1} aria-valuemin={1} aria-valuemax={7}>
+              <div className="progress-fill" style={{ width: `${progress}%` }} />
+            </div>
+          </div>
+
+          <section className={`question-container ${step.field === "credit_score" ? "credit-score-question" : ""}`} key={step.field} aria-live="polite">
+            <div className="question-meta">
+              <span className="question-number">{String(currentStep + 1).padStart(2, "0")}</span>
+              <span className="question-eyebrow">{step.eyebrow}</span>
+              <span className="question-icon" aria-hidden="true">{step.icon}</span>
+            </div>
+
+            <div className="question-heading-row">
+              <h3>{step.question}</h3>
+              <button type="button" className="help-button" aria-label="Show information" aria-expanded={helpOpen} onClick={() => setHelpOpen((open) => !open)}>?</button>
+            </div>
+
+            <p className="question-description">{step.description}</p>
+            {helpOpen && (
+              <aside className="help-card">
+                <span className="help-card-icon">i</span>
+                <div>
+                  <strong>{step.helpTitle}</strong>
+                  <p>{step.help}</p>
+                </div>
+                <button type="button" aria-label="Close information" className="help-close" onClick={() => setHelpOpen(false)}>×</button>
+              </aside>
+            )}
+
+            {step.field === "dependents" && (
+              <div className="number-options">
+                {[0, 1, 2, 3].map((value) => (
+                  <button key={value} type="button" className={`number-option ${values.dependents === value ? "selected" : ""}`} aria-pressed={values.dependents === value} onClick={() => pickDependents(value)}>
+                    <b>{value}</b>
+                    <small>{value === 0 ? "None" : value === 1 ? "Person" : "People"}</small>
+                    {values.dependents === value && <i>✓</i>}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {step.field === "employment_type" && (
+              <div className="option-grid">
+                {employment.map(([value, icon, detail]) => (
+                  <button key={value} type="button" className={`choice-card ${values.employment_type === value ? "selected" : ""}`} aria-pressed={values.employment_type === value} onClick={() => pickEmployment(value)}>
+                    <span className="choice-icon">{icon}</span>
+                    <span><b>{value}</b><small>{detail}</small></span>
+                    {values.employment_type === value && <i className="choice-check">✓</i>}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {step.field === "annual_income" && <CurrencyInput label="Annual income" placeholder="6,00,000" registration={register("annual_income", { valueAsNumber: true })} hint="Example: ₹6,00,000 per year" />}
+            {step.field === "loan_amount" && <CurrencyInput label="Loan amount" placeholder="15,00,000" registration={register("loan_amount", { valueAsNumber: true })} hint="Requested principal amount" />}
+            {step.field === "credit_score" && (
+              <section className="credit-score-card" aria-label="Credit score selection">
+                <CreditScoreGauge score={score} />
+                <div className="slider-section">
+                  <div className="credit-score-instruction">
+                    <strong>Move the slider to your latest CIBIL score</strong>
+                    <b>{status}</b>
+                  </div>
+                  <input aria-label="Credit score" type="range" min="300" max="900" step="1" className="custom-range credit-range" style={{ "--range-progress": `${((score - 300) / 600) * 100}%` } as React.CSSProperties} {...register("credit_score", { valueAsNumber: true })} />
+                  <div className="range-labels credit-range-labels">
+                    <span>300</span><span>450</span><span>600</span><span>750</span><span>900</span>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {step.field === "loan_tenure" && (
+              <div className="slider-area">
+                <div className="score-display">
+                  <span>Repayment period</span>
+                  <strong>{tenure} <small>years</small></strong>
+                </div>
+                <input aria-label="Loan tenure in years" type="range" min="2" max="30" step="1" className="custom-range" style={{ "--range-progress": `${((tenure - 2) / 28) * 100}%` } as React.CSSProperties} {...register("loan_tenure", { valueAsNumber: true })} />
+                <div className="range-labels">
+                  <span>2 years</span><span>16 years</span><span>30 years</span>
+                </div>
+                <p className="slider-hint">Choose a comfortable repayment period.</p>
+              </div>
+            )}
+
+            {step.field === "education" && (
+              <div className="education-grid">
+                {education.map(([value, icon]) => (
+                  <button key={value} type="button" className={`education-card ${values.education === value ? "selected" : ""}`} aria-pressed={values.education === value} onClick={() => pickEducation(value)}>
+                    <span>{icon}</span>
+                    <b>{value}</b>
+                    {values.education === value && <i className="education-check">✓</i>}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {error && <p className="field-error" role="alert"><span>!</span>{error}</p>}
+          </section>
+
+          <nav className="form-navigation" aria-label="Assessment navigation">
+            <button type="button" className="back-button" disabled={currentStep === 0 || loading} onClick={() => { setHelpOpen(false); setCurrentStep((value) => Math.max(0, value - 1)); }}>
+              ← <span>Back</span>
+            </button>
+            <button type="button" className="continue-button" disabled={loading} onClick={moveNext}>
+              {loading ? "Analyzing..." : currentStep === 6 ? "Check eligibility" : <>Continue <span>→</span></>}
+            </button>
+          </nav>
+          <p className="assessment-note">⌑ Your answers are processed securely for this assessment.</p>
+        </form>
+      </div>
+    </div>
+  );
 }
 
 function CurrencyInput({ label, placeholder, registration, hint }: { label: string; placeholder: string; registration: UseFormRegisterReturn; hint: string }) {

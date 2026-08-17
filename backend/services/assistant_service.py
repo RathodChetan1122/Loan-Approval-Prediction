@@ -319,7 +319,7 @@ def _call_gemini_api(message: str, history: List[dict], context: Optional[dict] 
     Supports GEMINI_API_KEY or GOOGLE_API_KEY environment variables.
     """
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
+    if not api_key or api_key == "your_gemini_api_key_here" or not api_key.startswith("AIzaSy"):
         return None
 
     # Supported fast model endpoints

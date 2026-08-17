@@ -1,9 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from pathlib import Path
+
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    base_dir = Path(__file__).parent
+    load_dotenv(base_dir / ".env")
+    load_dotenv(base_dir / ".env.example")
+    load_dotenv(base_dir.parent / ".env")
 except ImportError:
     pass
 

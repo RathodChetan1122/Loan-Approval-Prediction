@@ -216,7 +216,8 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
   checkPageBreak(48);
 
   const colWidth = (contentWidth - 6) / 2; // 86mm each
-  const colHeight = 42;
+  const isNTC = application && 'monthly_expenses' in application;
+  const colHeight = isNTC ? 60 : 42;
 
   // Left Card: Applicant Profile
   doc.setFillColor(248, 250, 252);
@@ -229,13 +230,35 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
   doc.setTextColor(15, 23, 42);
   doc.text("APPLICANT PROFILE", marginX + 6, currentY + 7);
 
+  const dependentsVal =
+    application?.dependents !== undefined
+      ? `${application.dependents} ${application.dependents === 1 ? "dependent" : "dependents"}`
+      : "0 dependents";
+
+  const employmentVal = cleanPdfText(application?.employment_type || "Private");
+  const educationVal = cleanPdfText(application?.education || "Graduate");
+  const incomeVal = application?.annual_income ? formatInr(application.annual_income) : "Rs. 6,00,000";
+  const creditScoreVal = application?.credit_score ? `${application.credit_score}` : "650 (NTC)";
+  const requestedLoanVal = formatInr(application?.loan_amount || result.loan_amount_analysis?.currentAmount || 1000000);
+  const tenureVal = `${application?.loan_tenure || 5} years`;
+
   const applicantRows = [
-    { label: "Dependents:", val: application?.dependents !== undefined ? `${application.dependents} ${application.dependents === 1 ? "dependent" : "dependents"}` : "N/A" },
-    { label: "Employment:", val: cleanPdfText(application?.employment_type || "N/A") },
-    { label: "Education:", val: cleanPdfText(application?.education || "N/A") },
-    { label: "Annual Income:", val: application?.annual_income ? formatInr(application.annual_income) : "N/A" },
-    { label: "Credit Score (CIBIL):", val: application?.credit_score ? `${application.credit_score}` : "N/A" },
+    { label: "Dependents:", val: dependentsVal },
+    { label: "Employment:", val: employmentVal },
+    { label: "Education:", val: educationVal },
+    { label: "Annual Income:", val: incomeVal },
   ];
+  
+  if (isNTC) {
+    const ntcApp = application as unknown as Record<string, unknown>;
+    const ntcRes = result as unknown as Record<string, unknown>;
+    applicantRows.push({ label: "Monthly Income:", val: formatInr(Number(ntcRes.monthly_income) || (Number(ntcApp.annual_income) / 12)) });
+    applicantRows.push({ label: "Monthly Expenses:", val: formatInr(Number(ntcApp.monthly_expenses) || 0) });
+    applicantRows.push({ label: "Disposable Income:", val: formatInr(Number(ntcRes.disposable_income) || 0) });
+    applicantRows.push({ label: "Expense Ratio:", val: `${(Number(ntcRes.expense_ratio) || 0).toFixed(1)}%` });
+  } else {
+    applicantRows.push({ label: "Credit Score (CIBIL):", val: creditScoreVal });
+  }
 
   let applicantY = currentY + 13.5;
   applicantRows.forEach((row) => {
@@ -262,8 +285,8 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
   doc.text("LOAN APPLICATION DETAILS", rightColX + 6, currentY + 7);
 
   const loanRows = [
-    { label: "Requested Loan Amount:", val: application?.loan_amount ? formatInr(application.loan_amount) : "N/A" },
-    { label: "Repayment Tenure:", val: application?.loan_tenure ? `${application.loan_tenure} years` : "N/A" },
+    { label: "Requested Loan Amount:", val: requestedLoanVal },
+    { label: "Repayment Tenure:", val: tenureVal },
     { label: "Loan Product:", val: "Personal / Term Loan" },
     { label: "Assessment Type:", val: "ML Automated Model" },
     { label: "Decision Confidence:", val: `${Math.max(result.approved_probability, result.rejected_probability) * 100 > 90 ? "High" : "Standard"}` },
@@ -283,6 +306,89 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
   });
 
   currentY += colHeight + 7;
+
+  // ==========================================================
+  // 3.5 LOAN AMOUNT WHAT-IF ANALYSIS
+  // ==========================================================
+  const whatIf = result.loan_amount_analysis;
+  if (whatIf && !isNTC) {
+    checkPageBreak(35);
+    
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(marginX, currentY, contentWidth, 34, 3, 3, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("ESTIMATED LOAN CAPACITY", marginX + 6, currentY + 7);
+
+    const leftText = `Requested Amount: ${formatInr(whatIf.currentAmount)}\nStatus: ${isApproved ? "Approved" : "Rejected"}`;
+    let rightText: string;
+    
+    if (whatIf.recommendedAmount > 0) {
+      rightText = `Maximum Predicted Eligible Amount: ${formatInr(whatIf.recommendedAmount)}\nApproval probability at this amount: ${whatIf.recommendedApprovalProbability.toFixed(1)}%`;
+      if (whatIf.recommendedAmount < whatIf.currentAmount) {
+        rightText += `\nSuggested Reduction: ${formatInr(whatIf.currentAmount - whatIf.recommendedAmount)}`;
+      }
+    } else {
+      rightText = `Maximum Predicted Eligible Amount: No eligible amount found`;
+    }
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.8);
+    doc.setTextColor(71, 85, 105);
+    doc.text(leftText, marginX + 6, currentY + 14);
+    doc.text(rightText, marginX + contentWidth / 2 + 2, currentY + 14);
+    
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    doc.text("* This is a model-based simulation, not a lender decision or guarantee of approval.", marginX + 6, currentY + 30);
+    
+    currentY += 41;
+    currentY += 41;
+  }
+
+  // ==========================================================
+  // 3.6 NTC ESTIMATED LOAN CAPACITY
+  // ==========================================================
+  if (isNTC && "maximum_eligible_amount" in result) {
+    const ntcRes = result as unknown as Record<string, unknown>;
+    checkPageBreak(35);
+    
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(marginX, currentY, contentWidth, 34, 3, 3, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("NTC ESTIMATED LOAN CAPACITY", marginX + 6, currentY + 7);
+
+    const leftText = `Requested Amount: ${formatInr(Number(ntcRes.requested_loan_amount))}\nStatus: ${ntcRes.prediction}`;
+    let rightText: string;
+    
+    if (ntcRes.maximum_eligible_amount !== null) {
+      rightText = `Maximum Predicted Eligible Amount: ${formatInr(Number(ntcRes.maximum_eligible_amount))}\nApproval probability at this amount: ${(Number(ntcRes.max_eligible_approved_probability) * 100).toFixed(1)}%`;
+      if (Number(ntcRes.maximum_eligible_amount) < Number(ntcRes.requested_loan_amount)) {
+        rightText += `\nSuggested Reduction: ${formatInr(Number(ntcRes.requested_loan_amount) - Number(ntcRes.maximum_eligible_amount))}`;
+      }
+    } else {
+      rightText = `Maximum Predicted Eligible Amount: No eligible amount found`;
+    }
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.8);
+    doc.setTextColor(71, 85, 105);
+    doc.text(leftText, marginX + 6, currentY + 14);
+    doc.text(rightText, marginX + contentWidth / 2 + 2, currentY + 14);
+    
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    doc.text("* " + ntcRes.max_loan_message, marginX + 6, currentY + 30);
+    
+    currentY += 41;
+  }
 
   // ==========================================================
   // 4. MODEL EXPLAINABILITY / WHY THIS RESULT?

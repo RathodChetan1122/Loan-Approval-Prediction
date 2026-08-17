@@ -33,6 +33,9 @@ const ntcSchema = z.object({
   annual_income: z.number()
     .positive("Annual income must be greater than ₹0"),
 
+  monthly_expenses: z.number()
+    .min(0, "Monthly expenses cannot be negative"),
+
   loan_amount: z.number()
     .positive("Loan amount must be greater than ₹0"),
 
@@ -101,6 +104,18 @@ const steps: Step[] = [
     helpTitle: "Annual income",
     help:
       "Include your typical income from all regular sources before tax deductions.",
+  },
+
+  {
+    field: "monthly_expenses",
+    eyebrow: "INCOME PROFILE",
+    icon: "₹",
+    question: "What are your monthly expenses?",
+    description:
+      "Enter your approximate total monthly spending on regular expenses.",
+    helpTitle: "Monthly expenses",
+    help:
+      "Enter your approximate total monthly spending on regular expenses such as rent, food, utilities, transportation, and other recurring household expenses.",
   },
 
   {
@@ -185,6 +200,9 @@ export default function NTCForm({
     defaultValues: {
       dependents: 0,
       employment_type: "Private",
+      annual_income: undefined,
+      monthly_expenses: undefined,
+      loan_amount: undefined,
       loan_tenure: 10,
       education: "Graduate",
     },
@@ -289,12 +307,22 @@ export default function NTCForm({
 
 
   return (
-    <form
-      className="assessment-form"
-      onSubmit={(event) =>
-        event.preventDefault()
-      }
-    >
+    <div className="assessment-wrapper">
+      <div className="assessment-card">
+        <header className="assessment-header">
+          <div>
+            <span className="assessment-eyebrow">NEW-TO-CREDIT ASSESSMENT</span>
+            <h2>Alternative Credit Assessment</h2>
+          </div>
+          <span className="assessment-icon" aria-hidden="true">✦</span>
+        </header>
+
+        <form
+          className="assessment-form"
+          onSubmit={(event) =>
+            event.preventDefault()
+          }
+        >
 
       <div className="progress-area">
 
@@ -304,7 +332,7 @@ export default function NTCForm({
             <strong>
               {currentStep + 1}
             </strong>{" "}
-            of 6
+            of 7
           </span>
 
           <span>
@@ -320,7 +348,7 @@ export default function NTCForm({
             currentStep + 1
           }
           aria-valuemin={1}
-          aria-valuemax={6}
+          aria-valuemax={7}
         >
           <div
             className="progress-fill"
@@ -553,6 +581,22 @@ export default function NTCForm({
           />
         )}
 
+        {step.field ===
+          "monthly_expenses" && (
+
+          <CurrencyInput
+            label="Monthly expenses"
+            placeholder="25,000"
+            registration={register(
+              "monthly_expenses",
+              {
+                valueAsNumber: true,
+              }
+            )}
+            hint="Example: ₹25,000 per month"
+          />
+        )}
+
 
         {step.field ===
           "loan_amount" && (
@@ -739,8 +783,8 @@ export default function NTCForm({
         >
           {loading
             ? "Analyzing..."
-            : currentStep === 5
-            ? "Check eligibility ✓"
+            : currentStep === 6
+            ? "Check eligibility"
             : (
               <>
                 Continue{" "}
@@ -756,7 +800,9 @@ export default function NTCForm({
         ⌑ Your answers are processed securely for this assessment.
       </p>
 
-    </form>
+        </form>
+      </div>
+    </div>
   );
 }
 

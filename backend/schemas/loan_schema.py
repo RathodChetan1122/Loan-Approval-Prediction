@@ -90,12 +90,7 @@ class PredictionResponse(BaseModel):
     rejected_probability: float
     suggestions: list[str]
     explanation: LoanExplanation | None = None
-    requested_loan_amount: int
-    maximum_eligible_amount: int
-    maximum_eligible_prediction: str
-    max_eligible_approved_probability: float
-    max_loan_status: str
-    max_loan_message: str
+    loan_amount_analysis: dict | None = None
 
 
 class MaxLoanEstimateResponse(BaseModel):

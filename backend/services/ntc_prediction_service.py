@@ -1,10 +1,55 @@
 from pathlib import Path
 
+import sys
+
 import joblib
+import numpy as np
 import pandas as pd
-import shap
+
+# Compatibility shims for loading scikit-learn 1.6.1 serialized pipelines
+# across varied Python/scikit-learn runtime versions without altering model artifacts.
+try:
+    import sklearn.compose._column_transformer
+    if not hasattr(sklearn.compose._column_transformer, "_RemainderColsList"):
+        class _RemainderColsList(list):
+            pass
+        sklearn.compose._column_transformer._RemainderColsList = _RemainderColsList
+except Exception:
+    pass
+
+try:
+    import sklearn._loss
+    if not hasattr(sklearn._loss, "CyHalfBinomialLoss"):
+        sklearn._loss.CyHalfBinomialLoss = getattr(
+            sklearn._loss, "HalfBinomialLoss", None
+        )
+    if "_loss" not in sys.modules:
+        sys.modules["_loss"] = sklearn._loss
+except Exception:
+    pass
+
+try:
+    import sklearn.impute._base
+    if not hasattr(sklearn.impute._base.SimpleImputer, "_fill_dtype"):
+        sklearn.impute._base.SimpleImputer._fill_dtype = property(
+            lambda self: getattr(self, "_fit_dtype", np.float64)
+        )
+except Exception:
+    pass
+
+try:
+    import shap
+except Exception:  # pragma: no cover - fallback for broken optional dependency
+    shap = None
 
 from services.ntc_suggestion_service import generate_ntc_suggestions
+from services.explainability_service import (
+    FEATURE_METADATA,
+    MODEL_DISCLAIMER,
+    classify_impact,
+    format_user_value,
+    generate_feature_explanation,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,43 +74,77 @@ def _get_shap_explanation(input_data: pd.DataFrame) -> list[dict]:
     The input is transformed using the exact preprocessor
     stored inside ntc_pipeline.pkl.
     """
+    if shap is None:
+        return []
 
-    preprocessor = pipeline.named_steps["preprocessor"]
-    model = pipeline.named_steps["model"]
+    try:
+        preprocessor = pipeline.named_steps["preprocessor"]
+        model = pipeline.named_steps["model"]
 
-    transformed_data = preprocessor.transform(input_data)
+        transformed_data = preprocessor.transform(input_data)
 
-    feature_names = preprocessor.get_feature_names_out()
+        feature_names = preprocessor.get_feature_names_out()
 
-    explainer = shap.TreeExplainer(model)
+        explainer = shap.TreeExplainer(model)
 
-    shap_values = explainer.shap_values(transformed_data)
+        shap_values = explainer.shap_values(transformed_data)
 
-    # GradientBoostingClassifier binary classification
-    # returns one SHAP value per transformed feature.
-    if isinstance(shap_values, list):
-        values = shap_values[1]
-    else:
-        values = shap_values
+        # GradientBoostingClassifier binary classification
+        # returns one SHAP value per transformed feature.
+        if isinstance(shap_values, list):
+            values = shap_values[1]
+        else:
+            values = shap_values
 
-    values = values[0]
+        values = values[0]
 
-    explanation = []
+        explanation = []
 
-    for feature_name, value in zip(feature_names, values):
-        explanation.append(
-            {
-                "feature": feature_name,
-                "impact": round(float(value), 6),
-            }
+        for feature_name, value in zip(feature_names, values):
+            explanation.append(
+                {
+                    "feature": feature_name,
+                    "impact": round(float(value), 6),
+                }
+            )
+
+        explanation.sort(
+            key=lambda item: abs(item["impact"]),
+            reverse=True,
         )
 
-    explanation.sort(
-        key=lambda item: abs(item["impact"]),
-        reverse=True,
-    )
+        return explanation[:10]
+    except Exception:
+        return []
 
-    return explanation[:10]
+def evaluate_ntc_candidates(candidates: list[int], base_data: dict, pipeline_model) -> dict[int, float]:
+    if not candidates:
+        return {}
+    
+    # Build dataframe
+    df = pd.DataFrame([
+        {
+            "Education": base_data["education"],
+            "Dependents": base_data["dependents"],
+            "Employment_Type": base_data["employment_type"],
+            "Annual_Income": base_data["annual_income"],
+            "Monthly_Expenses": base_data["monthly_expenses"],
+            "Loan_Amount": amt,
+            "Loan_Tenure": base_data["loan_tenure"],
+        }
+        for amt in candidates
+    ])
+    
+    probs = pipeline_model.predict_proba(df)
+    
+    classes = list(pipeline_model.classes_)
+    approved_index = classes.index("Approved") if "Approved" in classes else 1
+    
+    results = {}
+    for i, amt in enumerate(candidates):
+        results[amt] = float(probs[i][approved_index])
+        
+    return results
 
 
 def predict_ntc(data: dict):
@@ -74,20 +153,25 @@ def predict_ntc(data: dict):
         "Dependents": data["dependents"],
         "Employment_Type": data["employment_type"],
         "Annual_Income": data["annual_income"],
+        "Monthly_Expenses": data["monthly_expenses"],
         "Loan_Amount": data["loan_amount"],
         "Loan_Tenure": data["loan_tenure"],
     }])
 
-    prediction = int(
-        pipeline.predict(input_data)[0]
-    )
+    prediction_raw = pipeline.predict(input_data)[0]
+    
+    if isinstance(prediction_raw, str):
+        loan_status = prediction_raw
+    else:
+        loan_status = reverse_mapping[int(prediction_raw)]
 
     probabilities = pipeline.predict_proba(
         input_data
     )[0]
 
-    approved_index = target_mapping["Approved"]
-    rejected_index = target_mapping["Rejected"]
+    classes = list(pipeline.classes_)
+    approved_index = classes.index("Approved") if "Approved" in classes else 1
+    rejected_index = classes.index("Rejected") if "Rejected" in classes else 0
 
     approved_probability = float(
         probabilities[approved_index]
@@ -102,15 +186,207 @@ def predict_ntc(data: dict):
         rejected_probability,
     )
 
-    loan_status = reverse_mapping[prediction]
-
     shap_explanation = _get_shap_explanation(
         input_data
     )
 
-    suggestions = generate_ntc_suggestions(
-        data
+    contribution_map: dict[str, float] = {}
+
+    for item in shap_explanation:
+        raw_feature = item["feature"]
+        contribution = float(item["impact"])
+
+        if raw_feature.startswith("numeric__"):
+            feature_name = raw_feature.replace("numeric__", "")
+        elif raw_feature.startswith("categorical__"):
+            suffix = raw_feature.replace("categorical__", "")
+            if suffix.startswith("Employment_Type_"):
+                feature_name = "Employment_Type"
+                selected_value = data["employment_type"]
+                active_value = suffix.replace("Employment_Type_", "")
+                if active_value != selected_value:
+                    continue
+            elif suffix.startswith("Education_"):
+                feature_name = "Education"
+                selected_value = data["education"]
+                active_value = suffix.replace("Education_", "")
+                if active_value != selected_value:
+                    continue
+            else:
+                continue
+        else:
+            feature_name = raw_feature
+
+        contribution_map[feature_name] = contribution
+
+    feature_order = [
+        "Dependents",
+        "Employment_Type",
+        "Annual_Income",
+        "Monthly_Expenses",
+        "Loan_Amount",
+        "Loan_Tenure",
+        "Education",
+    ]
+
+    aggregated_factors = []
+    for feature_name in feature_order:
+        if feature_name not in contribution_map:
+            continue
+
+        contribution = contribution_map[feature_name]
+        impact_level, impact_direction = classify_impact(contribution)
+        formatted_value = format_user_value(feature_name, data.get(feature_name.lower() if feature_name == "Dependents" else feature_name))
+
+        if feature_name == "Dependents":
+            formatted_value = format_user_value("Dependents", data["dependents"])
+        elif feature_name == "Employment_Type":
+            formatted_value = data["employment_type"]
+        elif feature_name == "Education":
+            formatted_value = data["education"]
+        elif feature_name == "Annual_Income":
+            formatted_value = format_user_value("Annual_Income", data["annual_income"])
+        elif feature_name == "Monthly_Expenses":
+            formatted_value = format_user_value("Monthly_Expenses", data["monthly_expenses"])
+        elif feature_name == "Loan_Amount":
+            formatted_value = format_user_value("Loan_Amount", data["loan_amount"])
+        elif feature_name == "Loan_Tenure":
+            formatted_value = format_user_value("Loan_Tenure", data["loan_tenure"])
+
+        meta = FEATURE_METADATA.get(feature_name, {})
+        factor = {
+            "feature": feature_name,
+            "label": meta.get("label", feature_name),
+            "user_value": formatted_value,
+            "impact_level": impact_level,
+            "impact_direction": impact_direction,
+            "raw_contribution": round(float(contribution), 4),
+            "explanation": generate_feature_explanation(
+                feature_name,
+                formatted_value,
+                impact_level,
+                impact_direction,
+            ),
+            "is_actionable": meta.get("actionable", False),
+        }
+        aggregated_factors.append(factor)
+
+    negative_factors = sorted(
+        [factor for factor in aggregated_factors if factor["impact_direction"] == "negative"],
+        key=lambda item: item["raw_contribution"],
     )
+    positive_factors = sorted(
+        [factor for factor in aggregated_factors if factor["impact_direction"] == "positive"],
+        key=lambda item: item["raw_contribution"],
+        reverse=True,
+    )
+
+    action_plan = []
+    priority = 1
+    for factor in negative_factors[:3]:
+        meta = FEATURE_METADATA.get(factor["feature"], {})
+        action_plan.append(
+            {
+                "priority": priority,
+                "title": meta.get("negative_title", f"Address {factor['label']}"),
+                "subtitle": meta.get("negative_subtitle", f"Review {factor['label']}"),
+                "factor_label": factor["label"],
+                "reason": factor["explanation"],
+                "recommendation": meta.get("action_template", ""),
+            }
+        )
+        priority += 1
+
+    explanation = {
+        "top_negative_factors": negative_factors[:3],
+        "positive_factors": positive_factors[:3],
+        "all_factors": aggregated_factors,
+        "action_plan": action_plan,
+        "disclaimer": MODEL_DISCLAIMER,
+    }
+
+    suggestions = generate_ntc_suggestions(
+        data, loan_status
+    )
+
+    monthly_income = data["annual_income"] / 12
+    monthly_expenses = data["monthly_expenses"]
+    disposable_income = monthly_income - monthly_expenses
+    expense_ratio = (monthly_expenses / monthly_income) * 100 if monthly_income > 0 else 0
+
+    # --------------------------------------------------------
+    # NTC Maximum Predicted Eligible Loan Analysis
+    # --------------------------------------------------------
+    requested_amount = int(data["loan_amount"])
+    threshold = 0.50
+    
+    maximum_eligible_amount = None
+    max_eligible_approved_probability = 0.0
+    
+    if loan_status == "Approved" and approved_probability >= threshold:
+        # Case 1: Requested amount is approved
+        maximum_eligible_amount = requested_amount
+        max_eligible_approved_probability = approved_probability
+        max_loan_status = "eligible"
+        max_loan_message = f"Based on your current applicant profile, the existing ML model predicts approval for your requested amount of ₹{requested_amount:,}."
+        max_prediction = "Approved"
+    else:
+        # Case 2/3: Requested amount is rejected, search downward
+        coarse_step = max(1000, requested_amount // 10)
+        if coarse_step >= 50000:
+            coarse_step = (coarse_step // 50000) * 50000
+        else:
+            coarse_step = (coarse_step // 1000) * 1000
+        
+        coarse_candidates = []
+        cand = requested_amount - coarse_step
+        cand = (cand // 1000) * 1000
+        while cand > 0 and len(coarse_candidates) < 10:
+            coarse_candidates.append(cand)
+            cand -= coarse_step
+            
+        coarse_res = evaluate_ntc_candidates(coarse_candidates, data, pipeline)
+        
+        favorable_boundary = None
+        unfavorable_boundary = requested_amount
+        
+        for amt in coarse_candidates:
+            if coarse_res[amt] >= threshold:
+                favorable_boundary = amt
+                break
+            else:
+                unfavorable_boundary = amt
+                
+        # Fine search
+        if favorable_boundary and (unfavorable_boundary - favorable_boundary) > 10000:
+            fine_step = (unfavorable_boundary - favorable_boundary) // 5
+            fine_step = max(10000, (fine_step // 10000) * 10000)
+            
+            fine_candidates = []
+            cand = favorable_boundary + fine_step
+            while cand < unfavorable_boundary:
+                fine_candidates.append(cand)
+                cand += fine_step
+                
+            fine_res = evaluate_ntc_candidates(fine_candidates, data, pipeline)
+            
+            for amt in fine_candidates:
+                if fine_res[amt] >= threshold:
+                    favorable_boundary = amt
+                    
+        if favorable_boundary is not None:
+            maximum_eligible_amount = favorable_boundary
+            max_eligible_approved_probability = coarse_res.get(favorable_boundary, fine_res.get(favorable_boundary, 0.0))
+            max_loan_status = "eligible"
+            reduction = requested_amount - favorable_boundary
+            max_loan_message = f"Your requested amount is above the model's predicted eligible amount. A lower amount of approximately ₹{favorable_boundary:,} received an approved model prediction."
+            max_prediction = "Approved"
+        else:
+            maximum_eligible_amount = None
+            max_eligible_approved_probability = 0.0
+            max_loan_status = "none_eligible"
+            max_loan_message = "The current model did not estimate an approval probability above the eligibility threshold for the tested loan amounts."
+            max_prediction = "Rejected"
 
     return {
         "prediction": loan_status,
@@ -123,6 +399,16 @@ def predict_ntc(data: dict):
             rejected_probability,
             4,
         ),
+        "requested_loan_amount": requested_amount,
+        "maximum_eligible_amount": maximum_eligible_amount,
+        "maximum_eligible_prediction": max_prediction,
+        "max_eligible_approved_probability": round(max_eligible_approved_probability, 4),
+        "max_loan_status": max_loan_status,
+        "max_loan_message": max_loan_message,
+        "explanation": explanation,
         "shap_explanation": shap_explanation,
         "suggestions": suggestions,
+        "monthly_income": monthly_income,
+        "disposable_income": disposable_income,
+        "expense_ratio": expense_ratio,
     }

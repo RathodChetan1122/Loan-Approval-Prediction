@@ -53,6 +53,21 @@ export interface LoanExplanation {
   disclaimer: string;
 }
 
+export interface LoanAmountScenario {
+  loanAmount: number;
+  approvalProbability: number;
+  status: "ELIGIBLE" | "NOT_ELIGIBLE";
+}
+
+export interface LoanAmountAnalysis {
+  mode: "UPWARD_CAPACITY" | "DOWNWARD_IMPROVEMENT";
+  currentAmount: number;
+  recommendedAmount: number;
+  recommendedApprovalProbability: number;
+  threshold: number;
+  scenarios: LoanAmountScenario[];
+}
+
 export interface PredictionResponse {
   prediction: "Approved" | "Rejected";
 
@@ -64,31 +79,11 @@ export interface PredictionResponse {
 
   explanation?: LoanExplanation;
 
-  requested_loan_amount?: number;
-
-  maximum_eligible_amount?: number;
-
-  maximum_eligible_prediction?: "Approved" | "Rejected";
-
-  max_eligible_approved_probability?: number;
-
-  max_loan_status?: "eligible" | "none_eligible" | "max_limit_reached";
-
-  max_loan_message?: string;
+  loan_amount_analysis?: LoanAmountAnalysis;
 }
 
 export interface MaxLoanEstimateResponse {
-  requested_loan_amount: number;
-
-  maximum_eligible_amount: number;
-
-  maximum_eligible_prediction: "Approved" | "Rejected";
-
-  max_eligible_approved_probability: number;
-
-  max_loan_status: "eligible" | "none_eligible" | "max_limit_reached";
-
-  max_loan_message: string;
+  loan_amount_analysis: LoanAmountAnalysis;
 }
 export interface ValidationResponse {
   status: string;
@@ -108,7 +103,7 @@ export interface NTCApplication {
   | "Skilled Labor";
 
   annual_income: number;
-
+  monthly_expenses: number;
   loan_amount: number;
 
   loan_tenure: number;
@@ -127,8 +122,16 @@ export interface NTCShapExplanation {
   impact: number;
 }
 
-export interface NTCPredictionResponse
-  extends PredictionResponse {
+export interface NTCPredictionResponse extends PredictionResponse {
   confidence: number;
   shap_explanation: NTCShapExplanation[];
+  monthly_income: number;
+  disposable_income: number;
+  expense_ratio: number;
+  requested_loan_amount: number;
+  maximum_eligible_amount: number | null;
+  maximum_eligible_prediction: string;
+  max_eligible_approved_probability: number;
+  max_loan_status: string;
+  max_loan_message: string;
 }
