@@ -40,7 +40,7 @@ export const predictLoan = async (
             application
         );
         return response.data;
-    } catch {
+    } catch (err) {
         try {
             const fallbackResponse = await axios.post<PredictionResponse>(
                 `${FALLBACK_API_URL}/predict`,
@@ -54,9 +54,8 @@ export const predictLoan = async (
                 }
             );
             return fallbackResponse.data;
-        } catch {
-            // High-reliability client-side ML underwriting engine fallback
-            return simulateClientSideLoanPrediction(application);
+        } catch (fallbackErr) {
+            throw new Error("Prediction service is temporarily unavailable. Please try again.");
         }
     }
 };
@@ -64,13 +63,18 @@ export const predictLoan = async (
 export const predictNTC = async (
     application: NTCApplication
 ): Promise<NTCPredictionResponse> => {
+    console.log("[NTC] /new-predict requested loan amount:", application.loan_amount);
     try {
         const response = await api.post<NTCPredictionResponse>(
             "/new-predict",
             application
         );
+        console.log("[NTC] /new-predict response:", response.data);
+        console.log("[NTC] Backend prediction succeeded: TRUE");
+        console.log("[NTC] Using client fallback: FALSE");
+        console.log("[NTC] Final result sent to UI:", response.data);
         return response.data;
-    } catch {
+    } catch (err) {
         try {
             const fallbackResponse = await axios.post<NTCPredictionResponse>(
                 `${FALLBACK_API_URL}/new-predict`,
@@ -83,9 +87,14 @@ export const predictNTC = async (
                     timeout: 4000,
                 }
             );
+            console.log("[NTC] /new-predict fallback response:", fallbackResponse.data);
+            console.log("[NTC] Backend prediction succeeded: TRUE (via fallback port)");
+            console.log("[NTC] Using client fallback: FALSE");
+            console.log("[NTC] Final result sent to UI:", fallbackResponse.data);
             return fallbackResponse.data;
-        } catch {
-            return simulateClientSideNTCPrediction(application);
+        } catch (fallbackErr) {
+            console.error("[NTC] /new-predict both primary and fallback failed.");
+            throw new Error("Prediction service is temporarily unavailable. Please try again.");
         }
     }
 };
@@ -100,10 +109,7 @@ export const getMaxEligibleLoan = async (
         );
         return response.data;
     } catch {
-        const pred = simulateClientSideLoanPrediction(application);
-        return {
-            loan_amount_analysis: pred.loan_amount_analysis!
-        };
+        throw new Error("Prediction service is temporarily unavailable. Please try again.");
     }
 };
 
@@ -612,260 +618,4 @@ Ask a specific question and I'll provide a structured explanation.`,
     };
 };
 
-/**
- * High-precision Client-Side Underwriting & ML Simulation Engine
- * Replicates the 7-feature production gradient boosted pipeline and SHAP explainability.
- */
-function simulateClientSideLoanPrediction(
-    app: LoanApplication
-): PredictionResponse {
-    const {
-        credit_score,
-        annual_income,
-        loan_amount,
-        loan_tenure,
-        employment_type,
-        dependents,
-        education,
-    } = app;
-
-    // 1. Credit Score Contribution (-0.45 to +0.45)
-    let creditScoreContrib = 0;
-    if (credit_score >= 800) creditScoreContrib = 0.42;
-    else if (credit_score >= 750) creditScoreContrib = 0.32;
-    else if (credit_score >= 700) creditScoreContrib = 0.18;
-    else if (credit_score >= 650) creditScoreContrib = 0.05;
-    else if (credit_score >= 600) creditScoreContrib = -0.12;
-    else if (credit_score >= 500) creditScoreContrib = -0.32;
-    else creditScoreContrib = -0.48;
-
-    // 2. Loan to Income Ratio (-0.40 to +0.25)
-    const loanToIncome = loan_amount / Math.max(annual_income, 1);
-    let ltiContrib = 0;
-    if (loanToIncome <= 1.5) ltiContrib = 0.26;
-    else if (loanToIncome <= 2.5) ltiContrib = 0.16;
-    else if (loanToIncome <= 3.5) ltiContrib = 0.02;
-    else if (loanToIncome <= 5.0) ltiContrib = -0.18;
-    else ltiContrib = -0.38;
-
-    // 3. Employment Type Contribution (-0.35 to +0.15)
-    let empContrib = 0;
-    if (employment_type === "Government") empContrib = 0.15;
-    else if (employment_type === "Private") empContrib = 0.10;
-    else if (employment_type === "Self-Employed") empContrib = 0.04;
-    else if (employment_type === "Skilled Labor") empContrib = 0.02;
-    else if (employment_type === "Unemployed") empContrib = -0.42;
-
-    // 4. Tenure Contribution
-    let tenureContrib = 0;
-    if (loan_tenure >= 5 && loan_tenure <= 15) tenureContrib = 0.06;
-    else if (loan_tenure < 3 && loanToIncome > 2.5) tenureContrib = -0.12;
-
-    // 5. Dependents Contribution
-    let depContrib = dependents <= 1 ? 0.04 : dependents === 2 ? 0.0 : -0.08;
-
-    // 6. Education Contribution
-    let eduContrib =
-        education === "PhD" || education === "Post Graduate"
-            ? 0.06
-            : education === "Graduate"
-            ? 0.03
-            : education === "High School" || education === "Diploma"
-            ? 0.0
-            : -0.04;
-
-    // Combined Score & Sigmoid Probability
-    const logit =
-        creditScoreContrib * 2.2 +
-        ltiContrib * 1.8 +
-        empContrib * 1.4 +
-        tenureContrib * 0.8 +
-        depContrib +
-        eduContrib +
-        0.15;
-
-    const rawProb = 1 / (1 + Math.exp(-logit * 2.2));
-    const approvedProb = Math.min(Math.max(Number(rawProb.toFixed(4)), 0.04), 0.98);
-    const rejectedProb = Number((1 - approvedProb).toFixed(4));
-    const isApproved = approvedProb >= 0.5;
-
-    // Max Eligible Loan Calculation (based on 50% FOIR at 9.5% annual interest)
-    const monthlyIncome = annual_income / 12;
-    const maxAffordableMonthlyEMI = monthlyIncome * (credit_score >= 700 ? 0.5 : 0.4);
-    const r = 0.095 / 12;
-    const n = Math.max(loan_tenure * 12, 12);
-    const maxCalculatedLoan = Math.round(
-        (maxAffordableMonthlyEMI * (Math.pow(1 + r, n) - 1)) /
-            (r * Math.pow(1 + r, n))
-    );
-    const maxEligibleAmount = Math.max(Math.min(maxCalculatedLoan, 10000000), 50000);
-
-    // Rule-Based Suggestions
-    const suggestions: string[] = [];
-    if (credit_score < 650) {
-        suggestions.push("Consider improving your credit score above 700 before applying to reduce borrowing cost.");
-    }
-    if (loanToIncome > 3.5) {
-        suggestions.push("The requested loan amount is relatively high compared with your annual income.");
-    }
-    if (employment_type === "Unemployed") {
-        suggestions.push("A stable verified income source or eligible co-applicant will strengthen your approval terms.");
-    }
-    if (dependents >= 3) {
-        suggestions.push("Ensure your disposable monthly income comfortably covers repayment obligations alongside household expenses.");
-    }
-    if (suggestions.length === 0) {
-        suggestions.push("Your application received a favorable assessment from our machine-learning model based on the information provided.");
-    }
-
-    // SHAP Factors
-    const allFactors = [
-        {
-            feature: "Credit_Score",
-            label: "Credit Score (CIBIL)",
-            user_value: `${credit_score} points`,
-            impact_level: Math.abs(creditScoreContrib) > 0.25 ? "High" : "Medium",
-            impact_direction: creditScoreContrib >= 0 ? ("positive" as const) : ("negative" as const),
-            raw_contribution: creditScoreContrib,
-            explanation:
-                credit_score >= 750
-                    ? "Excellent credit score significantly boosts lender confidence."
-                    : "Low credit score increases lender risk perception.",
-            is_actionable: true,
-        },
-        {
-            feature: "Loan_Amount",
-            label: "Requested Loan Amount",
-            user_value: `₹${loan_amount.toLocaleString("en-IN")}`,
-            impact_level: Math.abs(ltiContrib) > 0.2 ? "High" : "Medium",
-            impact_direction: ltiContrib >= 0 ? ("positive" as const) : ("negative" as const),
-            raw_contribution: ltiContrib,
-            explanation:
-                loanToIncome <= 3
-                    ? "Loan amount is well-balanced within your annual income."
-                    : "High loan-to-income multiple exerts pressure on repayment capacity.",
-            is_actionable: true,
-        },
-        {
-            feature: "Annual_Income",
-            label: "Annual Income",
-            user_value: `₹${annual_income.toLocaleString("en-IN")}`,
-            impact_level: "High",
-            impact_direction: annual_income >= 600000 ? ("positive" as const) : ("neutral" as const),
-            raw_contribution: annual_income >= 600000 ? 0.18 : 0.05,
-            explanation: "Demonstrated annual income supports debt servicing capability.",
-            is_actionable: true,
-        },
-        {
-            feature: "Employment_Type",
-            label: "Employment Profile",
-            user_value: employment_type,
-            impact_level: "Medium",
-            impact_direction: empContrib >= 0 ? ("positive" as const) : ("negative" as const),
-            raw_contribution: empContrib,
-            explanation: `Income stability profile for ${employment_type} sector.`,
-            is_actionable: true,
-        },
-        {
-            feature: "Loan_Tenure",
-            label: "Repayment Tenure",
-            user_value: `${loan_tenure} years`,
-            impact_level: "Low",
-            impact_direction: tenureContrib >= 0 ? ("positive" as const) : ("neutral" as const),
-            raw_contribution: tenureContrib,
-            explanation: "Sufficient tenure spreads amortization to manageable monthly EMIs.",
-            is_actionable: true,
-        },
-    ];
-
-    const topNegative = allFactors.filter((f) => f.impact_direction === "negative");
-    const positiveFactors = allFactors.filter((f) => f.impact_direction === "positive");
-
-    const actionPlan = [
-        {
-            priority: 1,
-            title: isApproved ? "Maintain Healthy Credit Hygiene" : "Strengthen Credit Profile",
-            factor_label: "Credit Score",
-            reason: "Payment history constitutes ~35% of your credit scoring weight.",
-            recommendation: "Ensure 100% on-time EMI repayments and keep credit card balance utilization under 30%.",
-        },
-        {
-            priority: 2,
-            title: "Optimize Debt-to-Income Multiple",
-            factor_label: "Requested Loan Amount",
-            reason: "Lenders look for monthly commitments below 40-50% of net disposable income.",
-            recommendation: "Consider applying for the maximum eligible limit or choosing a longer tenure to reduce EMI.",
-        },
-    ];
-
-    return {
-        prediction: isApproved ? "Approved" : "Rejected",
-        approved_probability: approvedProb,
-        rejected_probability: rejectedProb,
-        suggestions,
-        explanation: {
-            top_negative_factors: topNegative,
-            positive_factors: positiveFactors,
-            all_factors: allFactors,
-            action_plan: actionPlan,
-            disclaimer: "Assessment generated via ML risk model. Formal approval subject to lender verification.",
-        },
-        loan_amount_analysis: {
-            mode: isApproved ? "UPWARD_CAPACITY" : "DOWNWARD_IMPROVEMENT",
-            currentAmount: loan_amount,
-            recommendedAmount: maxEligibleAmount,
-            recommendedApprovalProbability: Math.min(approvedProb + 0.08, 0.96) * 100,
-            threshold: 50.0,
-            scenarios: [
-                {
-                    loanAmount: loan_amount,
-                    approvalProbability: approvedProb * 100,
-                    status: isApproved ? "ELIGIBLE" : "NOT_ELIGIBLE"
-                },
-                {
-                    loanAmount: maxEligibleAmount,
-                    approvalProbability: Math.min(approvedProb + 0.08, 0.96) * 100,
-                    status: "ELIGIBLE"
-                }
-            ]
-        }
-    };
-}
-
-function simulateClientSideNTCPrediction(
-    app: NTCApplication
-): NTCPredictionResponse {
-    const loanApp: LoanApplication = {
-        ...app,
-        credit_score: 650, // Imputed baseline for New to Credit
-    };
-    const standard = simulateClientSideLoanPrediction(loanApp);
-
-    const monthly_income = app.annual_income / 12;
-    const monthly_expenses = app.monthly_expenses || 0;
-    const disposable_income = monthly_income - monthly_expenses;
-    const expense_ratio = monthly_income > 0 ? (monthly_expenses / monthly_income) * 100 : 0;
-
-    return {
-        ...standard,
-        confidence: 0.89,
-        shap_explanation: [
-            { feature: "Annual_Income", impact: 0.32 },
-            { feature: "Employment_Type", impact: 0.24 },
-            { feature: "Loan_Amount", impact: -0.18 },
-            { feature: "Loan_Tenure", impact: 0.12 },
-        ],
-        monthly_income,
-        disposable_income,
-        expense_ratio,
-        requested_loan_amount: app.loan_amount,
-        maximum_eligible_amount: standard.prediction === 'Approved' ? app.loan_amount : null,
-        maximum_eligible_prediction: standard.prediction,
-        max_eligible_approved_probability: standard.approved_probability,
-        max_loan_status: standard.prediction === 'Approved' ? 'eligible' : 'none_eligible',
-        max_loan_message: 'Mock estimation based on the submitted application profile.'
-    };
-}
-
 export default api;
-

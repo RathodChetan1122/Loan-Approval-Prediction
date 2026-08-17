@@ -58,8 +58,17 @@ MODEL_PATH = BASE_DIR / "model" / "ntc_pipeline.pkl"
 MAPPING_PATH = BASE_DIR / "model" / "target_mapping.pkl"
 
 
-pipeline = joblib.load(MODEL_PATH)
-target_mapping = joblib.load(MAPPING_PATH)
+import sklearn
+print("[NTC MODEL] Loading model...")
+try:
+    pipeline = joblib.load(MODEL_PATH)
+    target_mapping = joblib.load(MAPPING_PATH)
+    print("[NTC MODEL] Model loaded successfully")
+    print(f"[NTC MODEL] Model path: {MODEL_PATH}")
+    print(f"[NTC MODEL] sklearn version: {sklearn.__version__}")
+except Exception as e:
+    print(f"[NTC MODEL] ERROR: Failed to load model from {MODEL_PATH}: {e}")
+    raise e
 
 reverse_mapping = {
     value: key
@@ -383,6 +392,15 @@ def predict_ntc(data: dict):
             max_loan_status = "none_eligible"
             max_loan_message = "Based on your current applicant profile, the existing ML model does not predict approval for any evaluated loan amount up to your requested amount."
             max_prediction = "Rejected"
+
+    if maximum_eligible_amount is not None:
+        assert maximum_eligible_amount <= requested_amount, f"Invariant violation: maximum_eligible_amount ({maximum_eligible_amount}) > requested_amount ({requested_amount})"
+
+    print(f"[NTC] Requested loan amount: {requested_amount}")
+    print(f"[NTC] Primary prediction: {loan_status}")
+    print(f"[NTC] Approval probability: {approved_probability}")
+    print(f"[NTC] Maximum predicted eligible amount: {maximum_eligible_amount}")
+    print(f"[NTC] Search result: {max_loan_status}")
 
     return {
         "prediction": loan_status,
