@@ -689,16 +689,65 @@ function simulateClientSideLoanPrediction(
     const rejectedProb = Number((1 - approvedProb).toFixed(4));
     const isApproved = approvedProb >= 0.5;
 
-    // Max Eligible Loan Calculation (based on 50% FOIR at 9.5% annual interest)
+    // Max Eligible Loan Calculation (Bidirectional Capacity Estimation)
+    let recommendedAmount: number | null;
+    let recommendedApprovalProb: number;
+    let maxLoanStatus: string;
+    let maxLoanMessage: string;
+    let mode: "UPWARD_CAPACITY" | "DOWNWARD_IMPROVEMENT";
+
     const monthlyIncome = annual_income / 12;
-    const maxAffordableMonthlyEMI = monthlyIncome * (credit_score >= 700 ? 0.5 : 0.4);
+    const maxAffordableMonthlyEMI = monthlyIncome * (credit_score >= 750 ? 0.55 : credit_score >= 700 ? 0.50 : credit_score >= 600 ? 0.40 : 0.25);
     const r = 0.095 / 12;
     const n = Math.max(loan_tenure * 12, 12);
     const maxCalculatedLoan = Math.round(
         (maxAffordableMonthlyEMI * (Math.pow(1 + r, n) - 1)) /
             (r * Math.pow(1 + r, n))
     );
-    const maxEligibleAmount = Math.max(Math.min(maxCalculatedLoan, 10000000), 50000);
+
+    if (isApproved) {
+        mode = "UPWARD_CAPACITY";
+        let maxCapacity = Math.max(loan_amount, maxCalculatedLoan);
+        if (maxCapacity >= 1000000) {
+            maxCapacity = Math.floor(maxCapacity / 50000) * 50000;
+        } else if (maxCapacity >= 100000) {
+            maxCapacity = Math.floor(maxCapacity / 10000) * 10000;
+        }
+
+        recommendedAmount = maxCapacity;
+        recommendedApprovalProb = Math.min(98.5, Math.max(65.0, approvedProb * 100 - (maxCapacity > loan_amount ? 8.5 : 0)));
+        maxLoanStatus = "eligible";
+        
+        if (recommendedAmount > loan_amount) {
+            const additional = recommendedAmount - loan_amount;
+            maxLoanMessage = `Based on your strong applicant profile, the ML model predicts approval for your requested amount of ₹${loan_amount.toLocaleString("en-IN")} and estimates you could qualify for up to ₹${recommendedAmount.toLocaleString("en-IN")} (₹${additional.toLocaleString("en-IN")} additional capacity).`;
+        } else {
+            maxLoanMessage = `Based on your current applicant profile, the existing ML model predicts approval for your requested amount of ₹${loan_amount.toLocaleString("en-IN")}.`;
+        }
+    } else {
+        mode = "DOWNWARD_IMPROVEMENT";
+        let affordable = Math.min(maxCalculatedLoan, Math.floor(loan_amount * 0.85));
+        if (affordable >= 1000000) {
+            affordable = Math.floor(affordable / 50000) * 50000;
+        } else if (affordable >= 100000) {
+            affordable = Math.floor(affordable / 10000) * 10000;
+        } else {
+            affordable = Math.floor(affordable / 5000) * 5000;
+        }
+
+        if (affordable >= 50000 && affordable < loan_amount && credit_score >= 450 && employment_type !== "Unemployed") {
+            recommendedAmount = affordable;
+            recommendedApprovalProb = 75.4;
+            maxLoanStatus = "eligible";
+            const reduction = loan_amount - recommendedAmount;
+            maxLoanMessage = `Your requested amount of ₹${loan_amount.toLocaleString("en-IN")} is above the model's predicted eligible limit. Based on your applicant profile, the ML model predicts approval up to approximately ₹${recommendedAmount.toLocaleString("en-IN")} (Suggested reduction: ₹${reduction.toLocaleString("en-IN")}).`;
+        } else {
+            recommendedAmount = null;
+            recommendedApprovalProb = 0;
+            maxLoanStatus = "none_eligible";
+            maxLoanMessage = "Based on your current applicant profile, the existing ML model does not predict loan approval for any evaluated loan amount.";
+        }
+    }
 
     // Rule-Based Suggestions
     const suggestions: string[] = [];
@@ -798,6 +847,22 @@ function simulateClientSideLoanPrediction(
         },
     ];
 
+    const scenarios = [
+        {
+            loanAmount: loan_amount,
+            approvalProbability: Number((approvedProb * 100).toFixed(2)),
+            status: isApproved ? ("ELIGIBLE" as const) : ("NOT_ELIGIBLE" as const),
+        },
+    ];
+
+    if (recommendedAmount !== null && recommendedAmount !== loan_amount) {
+        scenarios.push({
+            loanAmount: recommendedAmount,
+            approvalProbability: Number(recommendedApprovalProb.toFixed(2)),
+            status: "ELIGIBLE" as const,
+        });
+    }
+
     return {
         prediction: isApproved ? "Approved" : "Rejected",
         approved_probability: approvedProb,
@@ -810,25 +875,20 @@ function simulateClientSideLoanPrediction(
             action_plan: actionPlan,
             disclaimer: "Assessment generated via ML risk model. Formal approval subject to lender verification.",
         },
+        requested_loan_amount: loan_amount,
+        maximum_eligible_amount: recommendedAmount,
+        maximum_eligible_prediction: recommendedAmount !== null ? "Approved" : "Rejected",
+        max_eligible_approved_probability: Number((recommendedApprovalProb / 100).toFixed(4)),
+        max_loan_status: maxLoanStatus,
+        max_loan_message: maxLoanMessage,
         loan_amount_analysis: {
-            mode: isApproved ? "UPWARD_CAPACITY" : "DOWNWARD_IMPROVEMENT",
+            mode: mode,
             currentAmount: loan_amount,
-            recommendedAmount: maxEligibleAmount,
-            recommendedApprovalProbability: Math.min(approvedProb + 0.08, 0.96) * 100,
+            recommendedAmount: recommendedAmount as number,
+            recommendedApprovalProbability: recommendedApprovalProb,
             threshold: 50.0,
-            scenarios: [
-                {
-                    loanAmount: loan_amount,
-                    approvalProbability: approvedProb * 100,
-                    status: isApproved ? "ELIGIBLE" : "NOT_ELIGIBLE"
-                },
-                {
-                    loanAmount: maxEligibleAmount,
-                    approvalProbability: Math.min(approvedProb + 0.08, 0.96) * 100,
-                    status: "ELIGIBLE"
-                }
-            ]
-        }
+            scenarios: scenarios.sort((a, b) => a.loanAmount - b.loanAmount),
+        },
     };
 }
 
@@ -859,13 +919,14 @@ function simulateClientSideNTCPrediction(
         disposable_income,
         expense_ratio,
         requested_loan_amount: app.loan_amount,
-        maximum_eligible_amount: standard.prediction === 'Approved' ? app.loan_amount : null,
-        maximum_eligible_prediction: standard.prediction,
-        max_eligible_approved_probability: standard.approved_probability,
-        max_loan_status: standard.prediction === 'Approved' ? 'eligible' : 'none_eligible',
-        max_loan_message: 'Mock estimation based on the submitted application profile.'
+        maximum_eligible_amount: standard.maximum_eligible_amount ?? null,
+        maximum_eligible_prediction: standard.maximum_eligible_prediction ?? standard.prediction,
+        max_eligible_approved_probability: standard.max_eligible_approved_probability ?? standard.approved_probability,
+        max_loan_status: standard.max_loan_status ?? "eligible",
+        max_loan_message: standard.max_loan_message ?? "",
     };
 }
 
 export default api;
+
 
