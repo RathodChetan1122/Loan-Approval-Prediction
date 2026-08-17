@@ -308,87 +308,68 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
   currentY += colHeight + 7;
 
   // ==========================================================
-  // 3.5 LOAN AMOUNT WHAT-IF ANALYSIS
+  // 3.5 ESTIMATED LOAN CAPACITY / MAXIMUM ELIGIBLE AMOUNT
   // ==========================================================
   const whatIf = result.loan_amount_analysis;
-  if (whatIf && !isNTC) {
-    checkPageBreak(35);
-    
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(marginX, currentY, contentWidth, 34, 3, 3, "FD");
+  const maxEligibleAmount =
+    result.maximum_eligible_amount !== undefined
+      ? result.maximum_eligible_amount
+      : whatIf?.recommendedAmount !== undefined
+      ? whatIf.recommendedAmount
+      : isApproved
+      ? (application?.loan_amount || 1000000)
+      : null;
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.5);
-    doc.setTextColor(15, 23, 42);
-    doc.text("ESTIMATED LOAN CAPACITY", marginX + 6, currentY + 7);
+  const reqAmount =
+    result.requested_loan_amount ??
+    application?.loan_amount ??
+    whatIf?.currentAmount ??
+    1000000;
 
-    const leftText = `Requested Amount: ${formatInr(whatIf.currentAmount)}\nStatus: ${isApproved ? "Approved" : "Rejected"}`;
-    let rightText: string;
-    
-    if (whatIf.recommendedAmount > 0) {
-      rightText = `Maximum Predicted Eligible Amount: ${formatInr(whatIf.recommendedAmount)}\nApproval probability at this amount: ${whatIf.recommendedApprovalProbability.toFixed(1)}%`;
-      if (whatIf.recommendedAmount < whatIf.currentAmount) {
-        rightText += `\nSuggested Reduction: ${formatInr(whatIf.currentAmount - whatIf.recommendedAmount)}`;
-      }
-    } else {
-      rightText = `Maximum Predicted Eligible Amount: No eligible amount found`;
+  const maxEligibleProb =
+    result.max_eligible_approved_probability !== undefined && result.max_eligible_approved_probability > 0
+      ? (result.max_eligible_approved_probability * 100).toFixed(1)
+      : whatIf?.recommendedApprovalProbability !== undefined && whatIf.recommendedApprovalProbability > 0
+      ? whatIf.recommendedApprovalProbability.toFixed(1)
+      : isApproved
+      ? (result.approved_probability * 100).toFixed(1)
+      : "0.0";
+
+  checkPageBreak(35);
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(marginX, currentY, contentWidth, 34, 3, 3, "FD");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text("ESTIMATED LOAN CAPACITY", marginX + 6, currentY + 7);
+
+  const leftText = `Requested Amount: ${formatInr(reqAmount)}\nStatus: ${result.prediction}`;
+  let rightText: string;
+
+  if (maxEligibleAmount !== null && maxEligibleAmount > 0) {
+    rightText = `Maximum Predicted Eligible Amount: ${formatInr(maxEligibleAmount)}\nApproval probability at this amount: ${maxEligibleProb}%`;
+    if (maxEligibleAmount > reqAmount && isApproved) {
+      rightText += `\nAdditional Borrowing Capacity: +${formatInr(maxEligibleAmount - reqAmount)}`;
+    } else if (maxEligibleAmount < reqAmount) {
+      rightText += `\nSuggested Reduction: -${formatInr(reqAmount - maxEligibleAmount)}`;
     }
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.8);
-    doc.setTextColor(71, 85, 105);
-    doc.text(leftText, marginX + 6, currentY + 14);
-    doc.text(rightText, marginX + contentWidth / 2 + 2, currentY + 14);
-    
-    doc.setFontSize(7);
-    doc.setTextColor(148, 163, 184);
-    doc.text("* This is a model-based simulation, not a lender decision or guarantee of approval.", marginX + 6, currentY + 30);
-    
-    currentY += 41;
-    currentY += 41;
+  } else {
+    rightText = `Maximum Predicted Eligible Amount: No eligible amount found`;
   }
 
-  // ==========================================================
-  // 3.6 NTC ESTIMATED LOAN CAPACITY
-  // ==========================================================
-  if (isNTC && "maximum_eligible_amount" in result) {
-    const ntcRes = result as unknown as Record<string, unknown>;
-    checkPageBreak(35);
-    
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(marginX, currentY, contentWidth, 34, 3, 3, "FD");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text(leftText, marginX + 6, currentY + 14);
+  doc.text(rightText, marginX + contentWidth / 2 + 2, currentY + 14);
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.5);
-    doc.setTextColor(15, 23, 42);
-    doc.text("NTC ESTIMATED LOAN CAPACITY", marginX + 6, currentY + 7);
+  doc.setFontSize(7);
+  doc.setTextColor(148, 163, 184);
+  doc.text("* " + (result.max_loan_message || "This is a model-predicted result based on the provided inputs, not a guaranteed bank loan approval."), marginX + 6, currentY + 30);
 
-    const leftText = `Requested Amount: ${formatInr(Number(ntcRes.requested_loan_amount))}\nStatus: ${ntcRes.prediction}`;
-    let rightText: string;
-    
-    if (ntcRes.maximum_eligible_amount !== null) {
-      rightText = `Maximum Predicted Eligible Amount: ${formatInr(Number(ntcRes.maximum_eligible_amount))}\nApproval probability at this amount: ${(Number(ntcRes.max_eligible_approved_probability) * 100).toFixed(1)}%`;
-      if (Number(ntcRes.maximum_eligible_amount) < Number(ntcRes.requested_loan_amount)) {
-        rightText += `\nSuggested Reduction: ${formatInr(Number(ntcRes.requested_loan_amount) - Number(ntcRes.maximum_eligible_amount))}`;
-      }
-    } else {
-      rightText = `Maximum Predicted Eligible Amount: No eligible amount found`;
-    }
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.8);
-    doc.setTextColor(71, 85, 105);
-    doc.text(leftText, marginX + 6, currentY + 14);
-    doc.text(rightText, marginX + contentWidth / 2 + 2, currentY + 14);
-    
-    doc.setFontSize(7);
-    doc.setTextColor(148, 163, 184);
-    doc.text("* " + ntcRes.max_loan_message, marginX + 6, currentY + 30);
-    
-    currentY += 41;
-  }
+  currentY += 41;
 
   // ==========================================================
   // 4. MODEL EXPLAINABILITY / WHY THIS RESULT?

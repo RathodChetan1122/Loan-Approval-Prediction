@@ -204,6 +204,10 @@ def predict_loan(application_data: dict[str, Any]) -> dict[str, Any]:
         features=FEATURES,
     )
 
+    requested_amount = int(application_data["loan_amount"])
+    recommended_amount = loan_amount_analysis["recommendedAmount"]
+    recommended_prob = loan_amount_analysis["recommendedApprovalProbability"] / 100.0
+
     return {
         "prediction": prediction_label,
         "approved_probability": round(
@@ -217,6 +221,12 @@ def predict_loan(application_data: dict[str, Any]) -> dict[str, Any]:
         "suggestions": suggestions,
         "explanation": explanation,
         "loan_amount_analysis": loan_amount_analysis,
+        "requested_loan_amount": requested_amount,
+        "maximum_eligible_amount": recommended_amount,
+        "maximum_eligible_prediction": "Approved" if recommended_amount is not None else "Rejected",
+        "max_eligible_approved_probability": round(recommended_prob, 4),
+        "max_loan_status": loan_amount_analysis.get("max_loan_status", "eligible" if recommended_amount is not None else "none_eligible"),
+        "max_loan_message": loan_amount_analysis.get("max_loan_message", ""),
     }
 
 
@@ -224,12 +234,24 @@ def estimate_maximum_loan(application_data: dict[str, Any]) -> dict[str, Any]:
     """
     Dedicated calculation for loan amount what-if analysis.
     """
-    return generate_loan_amount_analysis(
+    analysis = generate_loan_amount_analysis(
         application_data=application_data,
         model=model,
         encoders=encoders,
         features=FEATURES,
     )
+    requested_amount = int(application_data["loan_amount"])
+    recommended_amount = analysis["recommendedAmount"]
+    recommended_prob = analysis["recommendedApprovalProbability"] / 100.0
+    return {
+        "requested_loan_amount": requested_amount,
+        "maximum_eligible_amount": recommended_amount,
+        "maximum_eligible_prediction": "Approved" if recommended_amount is not None else "Rejected",
+        "max_eligible_approved_probability": round(recommended_prob, 4),
+        "max_loan_status": analysis.get("max_loan_status", "eligible" if recommended_amount is not None else "none_eligible"),
+        "max_loan_message": analysis.get("max_loan_message", ""),
+        "loan_amount_analysis": analysis,
+    }
 
 
 # ============================================================

@@ -91,15 +91,22 @@ class PredictionResponse(BaseModel):
     suggestions: list[str]
     explanation: LoanExplanation | None = None
     loan_amount_analysis: dict | None = None
+    requested_loan_amount: int | None = None
+    maximum_eligible_amount: int | None = None
+    maximum_eligible_prediction: str | None = None
+    max_eligible_approved_probability: float | None = None
+    max_loan_status: str | None = None
+    max_loan_message: str | None = None
 
 
 class MaxLoanEstimateResponse(BaseModel):
     requested_loan_amount: int
-    maximum_eligible_amount: int
+    maximum_eligible_amount: int | None = None
     maximum_eligible_prediction: str
     max_eligible_approved_probability: float
     max_loan_status: str
     max_loan_message: str
+    loan_amount_analysis: dict | None = None
 
 
 class ValidationResponse(BaseModel):
