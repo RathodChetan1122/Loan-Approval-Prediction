@@ -3,6 +3,7 @@ import json
 from typing import Any, List, Optional
 import urllib.request
 import urllib.error
+import re
 
 SYSTEM_INSTRUCTION = """You are "LoanWise AI", an expert Loan & Financial Assistant specializing in:
 1. Loan Approval Prediction & Eligibility factors (Annual Income, CIBIL/Credit Score, DTI ratio, Employment stability, Dependents, Loan Tenure).
@@ -389,8 +390,9 @@ def _get_fallback_reply(message: str, context: Optional[dict] = None) -> tuple[s
 
     # Match exact or semantic topic keywords
     for item in KNOWLEDGE_BASE:
-        if any(kw in msg_lower for kw in item["keywords"]):
-            return item["reply"], item["suggestions"]
+        for kw in item["keywords"]:
+            if re.search(rf"\b{re.escape(kw)}\b", msg_lower):
+                return item["reply"], item["suggestions"]
 
     # If applicant context is provided, generate personalized guidance
     if context:
