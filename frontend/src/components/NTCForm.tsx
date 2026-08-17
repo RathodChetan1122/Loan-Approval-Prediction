@@ -289,12 +289,22 @@ export default function NTCForm({
 
 
   return (
-    <form
-      className="assessment-form"
-      onSubmit={(event) =>
-        event.preventDefault()
-      }
-    >
+    <div className="assessment-wrapper">
+      <div className="assessment-card">
+        <header className="assessment-header">
+          <div>
+            <span className="assessment-eyebrow">NEW-TO-CREDIT ASSESSMENT</span>
+            <h2>Alternative Credit Assessment</h2>
+          </div>
+          <span className="assessment-icon" aria-hidden="true">✦</span>
+        </header>
+
+        <form
+          className="assessment-form"
+          onSubmit={(event) =>
+            event.preventDefault()
+          }
+        >
 
       <div className="progress-area">
 
@@ -740,7 +750,7 @@ export default function NTCForm({
           {loading
             ? "Analyzing..."
             : currentStep === 5
-            ? "Check eligibility ✓"
+            ? "Check eligibility"
             : (
               <>
                 Continue{" "}
@@ -756,7 +766,9 @@ export default function NTCForm({
         ⌑ Your answers are processed securely for this assessment.
       </p>
 
-    </form>
+        </form>
+      </div>
+    </div>
   );
 }
 

@@ -5,10 +5,12 @@ import AiFloatingButton from "./components/AiFloatingButton";
 import AiLoanAssistant from "./components/AiLoanAssistant";
 import BrandLogo from "./components/BrandLogo";
 import EmiCalculator from "./components/EmiCalculator";
+import FinancialQuiz from "./components/FinancialQuiz";
 import LoanForm from "./components/LoanForm";
 import ModelPerformance from "./components/ModelPerformance";
 import NTCForm from "./components/NTCForm";
 import PredictionResult from "./components/PredictionResult";
+import QuizFloatingButton from "./components/QuizFloatingButton";
 import WelcomeDashboard from "./components/WelcomeDashboard";
 
 import {
@@ -31,7 +33,8 @@ type View =
   | "ntc-result"
   | "calculator"
   | "model-performance"
-  | "assistant";
+  | "assistant"
+  | "quiz";
 
 function ShieldIcon() {
   return (
@@ -235,6 +238,35 @@ export default function App() {
     });
   };
 
+  const toggleQuiz = () => {
+    setError(null);
+
+    if (view === "quiz") {
+      setView(previousView || "welcome");
+    } else {
+      setPreviousView(view);
+      setView("quiz");
+    }
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+  const openQuiz = () => {
+    setError(null);
+    if (view !== "quiz") {
+      setPreviousView(view);
+    }
+    setView("quiz");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
   const reset = () => {
     setResult(null);
     setApplication(null);
@@ -374,6 +406,7 @@ export default function App() {
             }}
             onOpenCalculator={openCalculator}
             onOpenAssistant={toggleAssistant}
+            onOpenQuiz={openQuiz}
           />
         )}
 
@@ -436,6 +469,13 @@ export default function App() {
           />
         )}
 
+        {view === "quiz" && (
+          <FinancialQuiz
+            onBack={reset}
+            onStartAssessment={startAssessment}
+          />
+        )}
+
         {error && (
           <div
             className="error-message"
@@ -462,6 +502,11 @@ export default function App() {
           Model-based guidance, not a lender decision
         </span>
       </footer>
+
+      <QuizFloatingButton
+        onClick={toggleQuiz}
+        isOpen={view === "quiz"}
+      />
 
       <AiFloatingButton
         onClick={toggleAssistant}

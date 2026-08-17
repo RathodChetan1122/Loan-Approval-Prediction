@@ -7,69 +7,8 @@ interface WelcomeDashboardProps {
   onViewPerformance: () => void;
   onOpenCalculator?: () => void;
   onOpenAssistant?: () => void;
+  onOpenQuiz?: () => void;
 }
-
-const ModelPerformanceIcon = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M3 3v18h18" />
-    <path d="M18 9l-5 5-4-4-4 4" />
-    <circle
-      cx="18"
-      cy="9"
-      r="2"
-      fill="currentColor"
-    />
-  </svg>
-);
-
-const CibilLogoIcon = () => (
-  <svg
-    width="64"
-    height="24"
-    viewBox="0 0 70 20"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <rect
-      x="0"
-      y="2"
-      width="16"
-      height="16"
-      rx="2"
-      fill="#00A6CE"
-    />
-    <text
-      x="3"
-      y="14"
-      fill="white"
-      fontSize="11"
-      fontWeight="bold"
-      fontFamily="sans-serif"
-    >
-      tu
-    </text>
-    <text
-      x="21"
-      y="15"
-      fill="#005A9E"
-      fontSize="15"
-      fontWeight="900"
-      fontFamily="sans-serif"
-      letterSpacing="0.5"
-    >
-      CIBIL
-    </text>
-  </svg>
-);
 
 export default function WelcomeDashboard({
   onStart,
@@ -78,59 +17,71 @@ export default function WelcomeDashboard({
   onViewPerformance,
   onOpenCalculator,
   onOpenAssistant,
+  onOpenQuiz,
 }: WelcomeDashboardProps) {
   return (
-    <>
-      {/* HERO */}
-      <section
-        className="welcome-hero"
-        id="home"
-      >
-        <div className="welcome-copy">
-          <span className="welcome-eyebrow">
-            Loan eligibility
-          </span>
-
-          <h1>
-            Know where you stand before a lender does.
+    <div className="welcome-dashboard-root">
+      {/* =========================================================================
+          1. HERO SECTION WITH INTERACTIVE LIVE UNDERWRITING PREVIEW
+      ========================================================================== */}
+      <section className="welcome-hero-v2" id="home">
+        <div className="welcome-hero-content">
+          <h1 className="hero-main-title">
+            Know Your Loan Approval Odds <span className="title-highlight">Before You Apply.</span>
           </h1>
 
-          <p>
-            We look at your income, obligations, and credit history the way
-            a lender would, and tell you what to expect — before you fill
-            out a single application.
+          <p className="hero-main-description">
+            Evaluate your debt-to-income, creditworthiness, and eligibility through
+            bank-grade Machine Learning models. Get instant approval probability, max eligible loan limits, and personalized recommendations with zero impact on your credit score.
           </p>
 
-          <div className="hero-cta-group">
+          {/* Primary Action Buttons */}
+          <div className="hero-action-row">
             <button
               type="button"
-              className="hero-cta"
+              className="hero-primary-btn"
               onClick={onStart}
             >
-              Check my eligibility
+              <span>Instant Eligibility Check</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
             </button>
 
             {onOpenCalculator && (
               <button
                 type="button"
-                className="hero-secondary-cta"
+                className="hero-secondary-btn"
                 onClick={onOpenCalculator}
               >
-                Calculate EMI instead
+                <span>Calculate Monthly EMI</span>
+                <span className="btn-icon-sub">₹</span>
               </button>
             )}
           </div>
 
-          <p className="hero-note">
-            No credit credentials needed to start. Everything you enter
-            stays in this browser tab.
-          </p>
+          {/* Trust Guarantees */}
+          <div className="hero-trust-bar">
+            <div className="trust-item">
+              <span className="trust-icon">🔒</span>
+              <span>No Hard Credit Pull</span>
+            </div>
+            <div className="trust-divider" />
+            <div className="trust-item">
+              <span className="trust-icon">⚡</span>
+              <span>60-Second Instant Result</span>
+            </div>
+            <div className="trust-divider" />
+            <div className="trust-item">
+              <span className="trust-icon">📊</span>
+              <span>SHAP Factor Insights</span>
+            </div>
+          </div>
         </div>
 
-        <div
-          className="hero-visual"
-          aria-hidden="true"
-        >
+        {/* Right Hero Visual: Circular Credit Profile Ring, Floating Insight & Visual Bars */}
+        <div className="hero-visual" aria-hidden="true">
           <div className="visual-score">
             <span>Credit profile</span>
             <strong>720</strong>
@@ -138,353 +89,255 @@ export default function WelcomeDashboard({
           </div>
 
           <div className="visual-insight">
-            <span>✦</span>
-
+            <span className="insight-sparkle">✦</span>
             <div>
               <b>Eligibility insights</b>
-              <small>
-                Clear next steps, not guarantees
-              </small>
+              <small>Clear next steps, not guarantees</small>
             </div>
           </div>
 
           <div className="visual-bars">
-            <i />
-            <i />
-            <i />
+            <i className="bar-1" />
+            <i className="bar-2" />
+            <i className="bar-3" />
           </div>
         </div>
       </section>
 
-      {/* CREDIT PROFILE */}
-      <section
-        className="cibil-decision"
-        id="credit-guide"
-        aria-labelledby="cibil-title"
-      >
-        <div className="section-copy">
-          <span>YOUR CREDIT PROFILE</span>
-
-          <h2 id="cibil-title">
-            Let's start with your credit profile
-          </h2>
-
-          <p>
-            Your CIBIL Score can provide useful
-            context for your eligibility estimate.
-            Choose the option that best describes
-            your current credit situation.
+      {/* =========================================================================
+          2. CHOOSE YOUR ASSESSMENT PATHWAY
+      ========================================================================== */}
+      <section className="pathways-section" id="credit-guide">
+        <div className="section-header-centered">
+          <span className="section-tag">TAILORED ONBOARDING</span>
+          <h2 className="section-title">Select Your Credit Profile Pathway</h2>
+          <p className="section-sub">
+            Whether you have a seasoned credit history or are applying for your very first loan,
+            our predictive engines provide accurate, customized guidance.
           </p>
         </div>
 
-        <div className="cibil-options">
-
-          {/* EXISTING CREDIT USER */}
-          <button
-            type="button"
-            className="cibil-choice choice-known"
+        <div className="pathway-cards-grid">
+          {/* Card 1: Known CIBIL Score */}
+          <div
+            className="pathway-card pathway-primary"
             onClick={onKnowScore}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onKnowScore()}
           >
-            <strong>
-              <span className="choice-tick" aria-hidden="true" />
-              Yes, I know my score
-            </strong>
-
-            <p>
-              I'll enter my CIBIL score manually
-              in the assessment.
+            <div className="pathway-icon-wrapper prime-bg">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+            </div>
+            <div className="pathway-badge">Standard Model (7-Feature)</div>
+            <h3 className="pathway-title">I Know My Credit Score</h3>
+            <p className="pathway-desc">
+              Enter your CIBIL score, annual income, loan amount, and existing obligations.
+              Our production ML pipeline calculates probability and SHAP explainability.
             </p>
-
-            <b>
-              Continue to assessment →
-            </b>
-          </button>
-
-          {/* NEW TO CREDIT */}
-          <button
-            type="button"
-            className="cibil-choice choice-new"
-            onClick={onContinueAfterCibil}
-          >
-            <strong>
-              <span className="choice-tick" aria-hidden="true" />
-              I'm new to credit
-            </strong>
-
-            <p>
-              I don't have an established credit
-              history or CIBIL score.
-            </p>
-
-            <b>
-              Start NTC assessment →
-            </b>
-          </button>
-
-        </div>
-
-        {/* DON'T KNOW SCORE */}
-        <div className="cibil-return">
-
-          <div>
-            <strong>
-              I don't know my score
-            </strong>
-
-            <span>
-              Check it securely on the official
-              CIBIL website, then return here when
-              you're ready.
+            <span className="pathway-cta-link">
+              Start Full Assessment <span>→</span>
             </span>
           </div>
 
-          <OfficialCibilButton />
+          {/* Card 2: New-to-Credit (NTC) */}
+          <div
+            className="pathway-card pathway-accent"
+            onClick={onContinueAfterCibil}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onContinueAfterCibil()}
+          >
+            <div className="pathway-icon-wrapper ntc-bg">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </div>
+            <div className="pathway-badge ntc-badge-style">Alternative Scoring</div>
+            <h3 className="pathway-title">I'm New to Credit (NTC)</h3>
+            <p className="pathway-desc">
+              No credit history or zero CIBIL rating? Our dedicated NTC ML pipeline evaluates
+              your repayment capacity using alternate income, stability, and obligation ratios.
+            </p>
+            <span className="pathway-cta-link">
+              Start NTC Assessment <span>→</span>
+            </span>
+          </div>
 
+          {/* Card 3: Free Official Bureau Check */}
+          <div className="pathway-card pathway-bureau">
+            <div className="pathway-icon-wrapper bureau-bg">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="17" x2="12" y2="21" />
+              </svg>
+            </div>
+            <div className="pathway-badge bureau-badge-style">Official Bureau</div>
+            <h3 className="pathway-title">Check Official CIBIL</h3>
+            <p className="pathway-desc">
+              Don't know your exact credit score? Fetch your official free credit report
+              from TransUnion CIBIL, then return here to run your eligibility prediction.
+            </p>
+            <div className="bureau-btn-holder">
+              <OfficialCibilButton />
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* FINANCIAL TOOLS */}
-      {onOpenCalculator && (
-        <section
-          className="tools-section"
-          id="financial-tools"
-          aria-labelledby="tools-title"
-        >
-          <div className="section-copy">
-            <span>
-              FINANCIAL UTILITIES
-            </span>
-
-            <h2 id="tools-title">
-              Estimate your monthly commitments
-            </h2>
-
-            <p>
-              Plan your loan repayment with our
-              accurate reducing-balance EMI
-              calculator before submitting your
-              application.
-            </p>
-          </div>
-
-          <div className="tool-banner">
-
-            <div className="tool-banner-content">
-              <span
-                className="tool-icon"
-                aria-hidden="true"
-              >
-                ₹
-              </span>
-
-              <div>
-                <h3>
-                  Independent Loan EMI Calculator
-                </h3>
-
-                <p>
-                  Calculate your estimated monthly
-                  EMI, total interest payable, and
-                  total repayment amount with custom
-                  interest rates and flexible tenures.
-                </p>
+      {/* =========================================================================
+          3. FINANCIAL UTILITIES (EMI & FINANCIAL CHALLENGE)
+      ========================================================================== */}
+      <section className="utilities-section" id="financial-tools">
+        <div className="utilities-grid">
+          {/* EMI Utility Card */}
+          {onOpenCalculator && (
+            <div className="utility-card utility-emi" onClick={onOpenCalculator} role="button" tabIndex={0}>
+              <div className="utility-top">
+                <span className="utility-icon">₹</span>
+                <span className="utility-tag">Interactive Tool</span>
               </div>
+              <h3 className="utility-title">Smart Loan EMI Calculator</h3>
+              <p className="utility-desc">
+                Simulate monthly installment commitments, interest vs. principal amortization,
+                and custom repayment tenures before finalizing your loan request.
+              </p>
+              <button type="button" className="utility-btn" onClick={onOpenCalculator}>
+                Launch Calculator →
+              </button>
             </div>
+          )}
 
-            <button
-              type="button"
-              className="tool-cta"
-              onClick={onOpenCalculator}
-            >
-              Open EMI Calculator
-              <span>→</span>
-            </button>
+          {/* Financial Challenge Card */}
+          {onOpenQuiz && (
+            <div className="utility-card utility-quiz" onClick={onOpenQuiz} role="button" tabIndex={0}>
+              <div className="utility-top">
+                <span className="utility-icon">🎯</span>
+                <span className="utility-tag quiz-tag-style">Knowledge Challenge</span>
+              </div>
+              <h3 className="utility-title">Financial &amp; Loan IQ Arena</h3>
+              <p className="utility-desc">
+                Test your mastery on CIBIL scoring rules, interest calculation nuances, DTI limits,
+                and borrowing guidelines across 5 core categories with 10 questions.
+              </p>
+              <button type="button" className="utility-btn" onClick={onOpenQuiz}>
+                Start Challenge →
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
 
-          </div>
-        </section>
-      )}
-
-      {/* FEATURES */}
-      <section
-        className="feature-section"
-        id="how-it-works"
-        aria-labelledby="feature-title"
-      >
-        <div className="section-copy">
-          <span>BUILT FOR CLARITY</span>
-
-          <h2 id="feature-title">
-            Everything you need before applying
-          </h2>
-
-          <p>
-            A simple, transparent experience
-            designed to help you prepare—not to
-            promise a lender decision.
+      {/* =========================================================================
+          4. CORE PLATFORM TRANSPARENCY & FEATURES
+      ========================================================================== */}
+      <section className="features-platform-section" id="how-it-works">
+        <div className="section-header-centered">
+          <span className="section-tag">INTELLIGENT ARCHITECTURE</span>
+          <h2 className="section-title">Engineered for Underwriting Transparency</h2>
+          <p className="section-sub">
+            We provide deep explainability on every decision so you understand exactly what lenders look for.
           </p>
         </div>
 
-        <div className="feature-grid">
-
-          {/* MODEL PERFORMANCE */}
-          <article
-            className="feature-card feature-card-flat"
-            style={{
-              animationDelay: "0ms",
-              cursor: "pointer",
-            }}
-            onClick={onViewPerformance}
-          >
-            <span>
-              <ModelPerformanceIcon />
-            </span>
-
-            <div className="feature-card-body">
-              <h3>
-                Model performance
-              </h3>
-
-              <p>
-                Explore the accuracy, feature
-                importance, and transparency insights
-                behind the LoanWise prediction model.
-              </p>
-
-              <span className="feature-card-link">
-                View model performance →
+        <div className="platform-features-grid">
+          {/* Feature 1 */}
+          <div className="platform-feature-card" onClick={onViewPerformance} role="button" tabIndex={0}>
+            <div className="feat-header">
+              <span className="feat-icon-badge">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 3v18h18" />
+                  <path d="M18 9l-5 5-4-4-4 4" />
+                  <circle cx="18" cy="9" r="2" fill="currentColor" />
+                </svg>
               </span>
+              <span className="feat-link-arrow">↗</span>
             </div>
-          </article>
+            <h4>Model Performance &amp; Metrics</h4>
+            <p>
+              Inspect our production model accuracy, confusion matrix, precision-recall curve,
+              and ROC-AUC benchmarking metrics.
+            </p>
+          </div>
 
-          {/* CIBIL */}
-          <article
-            className="feature-card feature-card-flat"
-            style={{
-              animationDelay: "80ms",
-              cursor: "pointer",
-            }}
-            onClick={() =>
-              window.open(
-                "https://www.cibil.com/freecibilscore",
-                "_blank",
-                "noopener,noreferrer"
-              )
-            }
-          >
-            <span
-              style={{
-                padding: "0",
-                background: "transparent",
-              }}
-            >
-              <CibilLogoIcon />
-            </span>
-
-            <div className="feature-card-body">
-              <h3>
-                CIBIL score check
-              </h3>
-
-              <p>
-                Check your score securely with the
-                official CIBIL website when you need it.
-              </p>
-
-              <span className="feature-card-link">
-                Check CIBIL score →
-              </span>
-            </div>
-          </article>
-
-          {/* AI LOAN ASSISTANT */}
-          <article
-            className="feature-card feature-card-flat"
-            style={{
-              animationDelay: "160ms",
-              cursor: onOpenAssistant ? "pointer" : "default",
-            }}
+          {/* Feature 2 */}
+          <div
+            className="platform-feature-card"
             onClick={onOpenAssistant}
-            onKeyDown={(event) => {
-              if (onOpenAssistant && (event.key === "Enter" || event.key === " ")) {
-                event.preventDefault();
-                onOpenAssistant();
-              }
-            }}
-            role={onOpenAssistant ? "button" : undefined}
-            tabIndex={onOpenAssistant ? 0 : undefined}
-            aria-label={onOpenAssistant ? "Open AI assistant" : undefined}
+            role="button"
+            tabIndex={0}
           >
-            <span>
-              ✦
-            </span>
-
-            <div className="feature-card-body">
-              <h3>
-                AI Loan Assistant
-              </h3>
-
-              <p>
-                Ask for tailored guidance, next steps,
-                and clarification on your loan scenario.
-              </p>
-
-              <span className="feature-card-link">
-                Open AI assistant →
-              </span>
+            <div className="feat-header">
+              <span className="feat-icon-badge ai-sparkle">✦</span>
+              <span className="feat-link-arrow">↗</span>
             </div>
-          </article>
+            <h4>Real-Time AI Loan Advisor</h4>
+            <p>
+              Chat with our dedicated AI assistant to clarify approval factors, analyze risk factors,
+              and discover ways to boost your credit terms.
+            </p>
+          </div>
 
+          {/* Feature 3 */}
+          <div className="platform-feature-card">
+            <div className="feat-header">
+              <span className="feat-icon-badge">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+              </span>
+              <span className="feat-link-arrow">✓</span>
+            </div>
+            <h4>SHAP Explainability Insights</h4>
+            <p>
+              Every decision comes with transparent feature contributions, highlighting the exact
+              positive and negative factors impacting your application.
+            </p>
+          </div>
         </div>
-
       </section>
 
-      {/* PROCESS */}
-      <section
-        className="process-section"
-        aria-labelledby="process-title"
-      >
-        <div className="section-copy">
-          <span>
-            HOW IT WORKS
-          </span>
-
-          <h2 id="process-title">
-            A clear path to your assessment
-          </h2>
+      {/* =========================================================================
+          5. 4-STEP ASSESSMENT PATHWAY
+      ========================================================================== */}
+      <section className="workflow-steps-section">
+        <div className="section-header-centered">
+          <span className="section-tag">CLEAR PROCESS</span>
+          <h2 className="section-title">How Your Assessment Works</h2>
         </div>
 
-        <ol className="process-list">
+        <div className="workflow-steps-row">
+          <div className="workflow-step-box">
+            <span className="step-number">01</span>
+            <h5>Select Track</h5>
+            <p>Choose between established credit profile or new-to-credit assessment.</p>
+          </div>
 
-          <li>
-            <b aria-hidden="true">01</b>
-            <span>
-              Choose your credit profile
-            </span>
-          </li>
+          <div className="workflow-step-box">
+            <span className="step-number">02</span>
+            <h5>Enter Metrics</h5>
+            <p>Input income, requested loan, tenure, and monthly liabilities securely.</p>
+          </div>
 
-          <li>
-            <b aria-hidden="true">02</b>
-            <span>
-              Share your financial profile
-            </span>
-          </li>
+          <div className="workflow-step-box">
+            <span className="step-number">03</span>
+            <h5>ML Inference</h5>
+            <p>Production algorithms evaluate risk probability and max loan boundaries.</p>
+          </div>
 
-          <li>
-            <b aria-hidden="true">03</b>
-            <span>
-              Receive a model prediction
-            </span>
-          </li>
-
-          <li>
-            <b aria-hidden="true">04</b>
-            <span>
-              Understand your next steps
-            </span>
-          </li>
-
-        </ol>
+          <div className="workflow-step-box">
+            <span className="step-number">04</span>
+            <h5>Take Action</h5>
+            <p>Receive clear next steps, tailored loan advice, and PDF export reports.</p>
+          </div>
+        </div>
       </section>
-    </>
+    </div>
   );
 }
