@@ -250,8 +250,8 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
   ];
   
   if (isNTC) {
-    const ntcApp = application as Record<string, unknown>;
-    const ntcRes = result as Record<string, unknown>;
+    const ntcApp = application as unknown as Record<string, unknown>;
+    const ntcRes = result as unknown as Record<string, unknown>;
     applicantRows.push({ label: "Monthly Income:", val: formatInr(Number(ntcRes.monthly_income) || (Number(ntcApp.annual_income) / 12)) });
     applicantRows.push({ label: "Monthly Expenses:", val: formatInr(Number(ntcApp.monthly_expenses) || 0) });
     applicantRows.push({ label: "Disposable Income:", val: formatInr(Number(ntcRes.disposable_income) || 0) });
@@ -353,7 +353,7 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
   // 3.6 NTC ESTIMATED LOAN CAPACITY
   // ==========================================================
   if (isNTC && "maximum_eligible_amount" in result) {
-    const ntcRes = result as Record<string, unknown>;
+    const ntcRes = result as unknown as Record<string, unknown>;
     checkPageBreak(35);
     
     doc.setFillColor(248, 250, 252);
