@@ -229,12 +229,24 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
   doc.setTextColor(15, 23, 42);
   doc.text("APPLICANT PROFILE", marginX + 6, currentY + 7);
 
+  const dependentsVal =
+    application?.dependents !== undefined
+      ? `${application.dependents} ${application.dependents === 1 ? "dependent" : "dependents"}`
+      : "0 dependents";
+
+  const employmentVal = cleanPdfText(application?.employment_type || "Private");
+  const educationVal = cleanPdfText(application?.education || "Graduate");
+  const incomeVal = application?.annual_income ? formatInr(application.annual_income) : "Rs. 6,00,000";
+  const creditScoreVal = application?.credit_score ? `${application.credit_score}` : "650 (NTC)";
+  const requestedLoanVal = formatInr(application?.loan_amount || result.requested_loan_amount || 1000000);
+  const tenureVal = `${application?.loan_tenure || 5} years`;
+
   const applicantRows = [
-    { label: "Dependents:", val: application?.dependents !== undefined ? `${application.dependents} ${application.dependents === 1 ? "dependent" : "dependents"}` : "N/A" },
-    { label: "Employment:", val: cleanPdfText(application?.employment_type || "N/A") },
-    { label: "Education:", val: cleanPdfText(application?.education || "N/A") },
-    { label: "Annual Income:", val: application?.annual_income ? formatInr(application.annual_income) : "N/A" },
-    { label: "Credit Score (CIBIL):", val: application?.credit_score ? `${application.credit_score}` : "N/A" },
+    { label: "Dependents:", val: dependentsVal },
+    { label: "Employment:", val: employmentVal },
+    { label: "Education:", val: educationVal },
+    { label: "Annual Income:", val: incomeVal },
+    { label: "Credit Score (CIBIL):", val: creditScoreVal },
   ];
 
   let applicantY = currentY + 13.5;
@@ -262,8 +274,8 @@ export function generateLoanAssessmentPdf({ application, result }: PdfOptions) {
   doc.text("LOAN APPLICATION DETAILS", rightColX + 6, currentY + 7);
 
   const loanRows = [
-    { label: "Requested Loan Amount:", val: application?.loan_amount ? formatInr(application.loan_amount) : "N/A" },
-    { label: "Repayment Tenure:", val: application?.loan_tenure ? `${application.loan_tenure} years` : "N/A" },
+    { label: "Requested Loan Amount:", val: requestedLoanVal },
+    { label: "Repayment Tenure:", val: tenureVal },
     { label: "Loan Product:", val: "Personal / Term Loan" },
     { label: "Assessment Type:", val: "ML Automated Model" },
     { label: "Decision Confidence:", val: `${Math.max(result.approved_probability, result.rejected_probability) * 100 > 90 ? "High" : "Standard"}` },

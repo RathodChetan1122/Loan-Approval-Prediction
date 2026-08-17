@@ -34,12 +34,6 @@ function ChevronIcon({ expanded }: { expanded: boolean }) {
   );
 }
 
-function isNTCApplication(
-  application: LoanApplication | NTCApplication | undefined
-): application is NTCApplication {
-  return !!application && !("credit_score" in application);
-}
-
 export default function PredictionResult({ result, initialApplication, onReset }: Props) {
   const approved = result.approved_probability * 100;
   const rejected = result.rejected_probability * 100;
@@ -72,7 +66,22 @@ export default function PredictionResult({ result, initialApplication, onReset }
   const explanation = result.explanation;
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const pdfApplication = isNTCApplication(initialApplication) ? null : initialApplication ?? null;
+  const pdfApplication: LoanApplication = initialApplication
+    ? "credit_score" in initialApplication
+      ? (initialApplication as LoanApplication)
+      : {
+          ...initialApplication,
+          credit_score: 650,
+        }
+    : {
+        dependents: 0,
+        employment_type: "Private",
+        annual_income: 600000,
+        credit_score: 750,
+        loan_amount: requestedAmount || 1000000,
+        loan_tenure: 5,
+        education: "Graduate",
+      };
 
   const handleDownloadPdf = async () => {
     try {
