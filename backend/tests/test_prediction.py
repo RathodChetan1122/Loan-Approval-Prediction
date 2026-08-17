@@ -190,4 +190,39 @@ def test_profile_specific_explanations_differ():
     assert exp2["action_plan"][0]["factor_label"] == "Requested Loan Amount"
 
     # Confirm explanations are truly personalized and distinct
-    assert exp1["top_negative_factors"][0]["feature"] != exp2["top_negative_factors"][0]["feature"]
+    assert exp1["top_negative_factors"][0]["feature"] != exp2["top_negative_factors"][0]["feature"]
+
+
+def test_ntc_prediction_contains_shared_explainability_format():
+    ntc_application = {
+        "dependents": 2,
+        "employment_type": "Private",
+        "annual_income": 500000,
+        "loan_amount": 600000,
+        "loan_tenure": 10,
+        "education": "Graduate",
+        "monthly_expenses": 30000,
+    }
+
+    response = client.post("/new-predict", json=ntc_application)
+
+    assert response.status_code == 200
+
+    data = response.json()
+    assert "explanation" in data
+    assert data["explanation"] is not None
+    assert "top_negative_factors" in data["explanation"]
+    assert "positive_factors" in data["explanation"]
+    assert "action_plan" in data["explanation"]
+    assert "disclaimer" in data["explanation"]
+
+    if data["explanation"]["top_negative_factors"]:
+        first_negative = data["explanation"]["top_negative_factors"][0]
+        assert "label" in first_negative
+        assert "user_value" in first_negative
+        assert "impact_level" in first_negative
+
+    assert any(
+        factor["label"] in {"Requested Loan Amount", "Annual Income", "Loan Tenure"}
+        for factor in data["explanation"]["all_factors"]
+    )

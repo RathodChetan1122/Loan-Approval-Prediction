@@ -1,15 +1,17 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
+import AiFloatingButton from "./components/AiFloatingButton";
+import AiLoanAssistant from "./components/AiLoanAssistant";
+import BrandLogo from "./components/BrandLogo";
+import EmiCalculator from "./components/EmiCalculator";
+import FinancialQuiz from "./components/FinancialQuiz";
 import LoanForm from "./components/LoanForm";
+import ModelPerformance from "./components/ModelPerformance";
 import NTCForm from "./components/NTCForm";
 import PredictionResult from "./components/PredictionResult";
+import QuizFloatingButton from "./components/QuizFloatingButton";
 import WelcomeDashboard from "./components/WelcomeDashboard";
-import EmiCalculator from "./components/EmiCalculator";
-import BrandLogo from "./components/BrandLogo";
-import ModelPerformance from "./components/ModelPerformance";
-import AiLoanAssistant from "./components/AiLoanAssistant";
-import AiFloatingButton from "./components/AiFloatingButton";
 
 import {
   predictLoan,
@@ -19,8 +21,8 @@ import {
 import type {
   LoanApplication,
   NTCApplication,
-  PredictionResponse,
   NTCPredictionResponse,
+  PredictionResponse,
 } from "./types/loan";
 
 type View =
@@ -31,7 +33,8 @@ type View =
   | "ntc-result"
   | "calculator"
   | "model-performance"
-  | "assistant";
+  | "assistant"
+  | "quiz";
 
 function ShieldIcon() {
   return (
@@ -115,6 +118,9 @@ export default function App() {
   const [ntcResult, setNtcResult] =
     useState<NTCPredictionResponse | null>(null);
 
+  const [ntcApplication, setNtcApplication] =
+    useState<NTCApplication | null>(null);
+
   const [loading, setLoading] =
     useState(false);
 
@@ -185,6 +191,7 @@ export default function App() {
     try {
       setLoading(true);
       setError(null);
+      setNtcApplication(ntcApplication);
 
       const response =
         await predictNTC(ntcApplication);
@@ -231,10 +238,40 @@ export default function App() {
     });
   };
 
+  const toggleQuiz = () => {
+    setError(null);
+
+    if (view === "quiz") {
+      setView(previousView || "welcome");
+    } else {
+      setPreviousView(view);
+      setView("quiz");
+    }
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+  const openQuiz = () => {
+    setError(null);
+    if (view !== "quiz") {
+      setPreviousView(view);
+    }
+    setView("quiz");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
   const reset = () => {
     setResult(null);
     setApplication(null);
     setNtcResult(null);
+    setNtcApplication(null);
     setError(null);
     setView("welcome");
     setPreviousView("welcome");
@@ -279,11 +316,10 @@ export default function App() {
                   : "light"
               )
             }
-            aria-label={`Switch to ${
-              theme === "light"
-                ? "dark"
-                : "light"
-            } theme`}
+            aria-label={`Switch to ${theme === "light"
+              ? "dark"
+              : "light"
+              } theme`}
           >
             {theme === "light" ? (
               <>
@@ -368,9 +404,9 @@ export default function App() {
                 behavior: "smooth",
               });
             }}
-            onOpenCalculator={
-              openCalculator
-            }
+            onOpenCalculator={openCalculator}
+            onOpenAssistant={toggleAssistant}
+            onOpenQuiz={openQuiz}
           />
         )}
 
@@ -402,6 +438,7 @@ export default function App() {
           ntcResult && (
             <PredictionResult
               result={ntcResult}
+              initialApplication={ntcApplication ?? undefined}
               onReset={reset}
             />
           )}
@@ -432,6 +469,13 @@ export default function App() {
           />
         )}
 
+        {view === "quiz" && (
+          <FinancialQuiz
+            onBack={reset}
+            onStartAssessment={startAssessment}
+          />
+        )}
+
         {error && (
           <div
             className="error-message"
@@ -458,6 +502,11 @@ export default function App() {
           Model-based guidance, not a lender decision
         </span>
       </footer>
+
+      <QuizFloatingButton
+        onClick={toggleQuiz}
+        isOpen={view === "quiz"}
+      />
 
       <AiFloatingButton
         onClick={toggleAssistant}

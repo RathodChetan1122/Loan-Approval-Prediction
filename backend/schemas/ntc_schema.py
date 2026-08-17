@@ -8,6 +8,8 @@ class NTCApplication(BaseModel):
 
     annual_income: int = Field(gt=0)
 
+    monthly_expenses: int = Field(ge=0)
+
     loan_amount: int = Field(gt=0)
 
     loan_tenure: int = Field(ge=2, le=30)
@@ -54,9 +56,9 @@ class NTCApplication(BaseModel):
 
 class NTCPredictionResponse(BaseModel):
     prediction: str
-
     approved_probability: float
-
     rejected_probability: float
-
+    monthly_income: float
+    disposable_income: float
+    expense_ratio: float
     suggestions: list[str]

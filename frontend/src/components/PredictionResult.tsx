@@ -1,17 +1,17 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
 import type {
-  PredictionResponse,
-  NTCPredictionResponse,
-  LoanApplication,
-  ExplanationFactor,
   ActionPlanItem,
+  ExplanationFactor,
+  LoanApplication,
+  NTCApplication,
+  NTCPredictionResponse,
+  PredictionResponse,
 } from "../types/loan";
-import { predictLoan } from "../services/api";
 import { generateLoanAssessmentPdf } from "../utils/pdfGenerator";
 
 interface Props {
   result: PredictionResponse | NTCPredictionResponse;
-  initialApplication?: LoanApplication;
+  initialApplication?: LoanApplication | NTCApplication;
   onReset: () => void;
 }
 
@@ -34,115 +34,46 @@ function ChevronIcon({ expanded }: { expanded: boolean }) {
   );
 }
 
-function isNTCResult(
-  result: PredictionResponse | NTCPredictionResponse
-): result is NTCPredictionResponse {
-  return (
-    "shap_explanation" in result &&
-    Array.isArray(result.shap_explanation)
-  );
-}
-
 export default function PredictionResult({ result, initialApplication, onReset }: Props) {
   const approved = result.approved_probability * 100;
   const rejected = result.rejected_probability * 100;
   const isApproved = result.prediction === "Approved";
   const decisionProbability = isApproved ? approved : rejected;
-  // Maximum Predicted Eligible Loan Amount
+  const isNTC = initialApplication && 'monthly_expenses' in initialApplication;
+  const whatIf = result.loan_amount_analysis;
+
   const requestedAmount =
-    result.requested_loan_amount ??
     initialApplication?.loan_amount ??
+    whatIf?.currentAmount ??
     0;
-
-  const maxEligibleAmount =
-    result.maximum_eligible_amount ?? 0;
-
-  const maxEligibleProb =
-    (result.max_eligible_approved_probability ?? 0) * 100;
-
-  const maxLoanStatus =
-    result.max_loan_status ??
-    (maxEligibleAmount > 0
-      ? "eligible"
-      : "none_eligible");
-
-  const isRequestedAboveMax =
-    maxLoanStatus !== "none_eligible" &&
-    requestedAmount > maxEligibleAmount;
 
   const formatINR = (amount: number) =>
     `₹${amount.toLocaleString("en-IN")}`;
   const explanation = result.explanation;
-
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const ntcFactors = isNTCResult(result)
-    ? [...result.shap_explanation]
-        .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))
-        .slice(0, 3)
-    : [];
-
-  const [simulatedAmount, setSimulatedAmount] = useState(initialApplication?.loan_amount || 50000);
-  const [simulatedTenure, setSimulatedTenure] = useState(initialApplication?.loan_tenure || 12);
-  const [simulationResponse, setSimulationResponse] = useState<{
-    result: PredictionResponse | NTCPredictionResponse;
-    amount: number;
-    tenure: number;
-  } | null>(null);
-  const [simulating, setSimulating] = useState(false);
-
-  const isInitial =
-    !!initialApplication &&
-    simulatedAmount === initialApplication.loan_amount &&
-    simulatedTenure === initialApplication.loan_tenure;
-
-  const simulatedResult = useMemo(() => {
-    if (
-      simulationResponse?.amount === simulatedAmount &&
-      simulationResponse?.tenure === simulatedTenure
-    ) {
-      return simulationResponse.result;
-    }
-    return null;
-  }, [simulationResponse, simulatedAmount, simulatedTenure]);
-
-  const activeSimulatedResult = simulatedResult || (isInitial ? result : null);
-  const simApproved = activeSimulatedResult
-    ? activeSimulatedResult.approved_probability * 100
-    : approved;
-  const diff = simApproved - approved;
-
-  useEffect(() => {
-    if (!initialApplication || isInitial) return;
-
-    const timer = setTimeout(async () => {
-      setSimulating(true);
-      try {
-        const res = await predictLoan({
+  const pdfApplication: LoanApplication = initialApplication
+    ? "credit_score" in initialApplication
+      ? (initialApplication as LoanApplication)
+      : {
           ...initialApplication,
-          loan_amount: simulatedAmount,
-          loan_tenure: simulatedTenure,
-        });
-        setSimulationResponse({
-          result: res,
-          amount: simulatedAmount,
-          tenure: simulatedTenure,
-        });
-      } catch (e) {
-        console.error("Simulation failed", e);
-      } finally {
-        setSimulating(false);
-      }
-    }, 450);
-
-    return () => clearTimeout(timer);
-  }, [simulatedAmount, simulatedTenure, initialApplication, isInitial]);
+          credit_score: 650,
+        }
+    : {
+        dependents: 0,
+        employment_type: "Private",
+        annual_income: 600000,
+        credit_score: 750,
+        loan_amount: requestedAmount || 1000000,
+        loan_tenure: 5,
+        education: "Graduate",
+      };
 
   const handleDownloadPdf = async () => {
     try {
       setIsDownloading(true);
       await new Promise((resolve) => setTimeout(resolve, 150));
-      generateLoanAssessmentPdf({ application: initialApplication, result });
+      generateLoanAssessmentPdf({ application: pdfApplication, result });
     } catch (error) {
       console.error("Failed to generate PDF report:", error);
     } finally {
@@ -179,13 +110,6 @@ export default function PredictionResult({ result, initialApplication, onReset }
     return "impact-badge-negative-low";
   };
 
-  const getImpactDot = (direction: string, level: string) => {
-    if (direction === "positive") return "🟢";
-    if (level.includes("Strong")) return "🔴";
-    if (level.includes("Moderate")) return "🟠";
-    return "🟡";
-  };
-
   return (
     <section className={`result-page ${isApproved ? "result-approved" : "result-rejected"}`}>
       {/* 1. Main Decision Card */}
@@ -196,7 +120,7 @@ export default function PredictionResult({ result, initialApplication, onReset }
         </div>
         <h1>Loan eligibility result</h1>
         <strong className="decision-title">
-          {isApproved ? "LIKELY ELIGIBLE" : "PREDICTED NOT ELIGIBLE"}
+          {isApproved ? "LIKELY ELIGIBLE" : "LIKELY NOT ELIGIBLE"}
         </strong>
         <p>
           {isApproved
@@ -234,123 +158,226 @@ export default function PredictionResult({ result, initialApplication, onReset }
           </div>
         </div>
       </div>
-            {/* 3. Maximum Predicted Eligible Loan Amount */}
-      <section
-        className="max-loan-panel"
-        aria-labelledby="max-loan-title"
-      >
-        <header className="max-loan-header">
-          <div
-            className="max-loan-icon"
-            aria-hidden="true"
-          >
-            ₹
+      
+      {/* 2.5 NTC Financial Summary */}
+      {'monthly_income' in result && initialApplication && 'monthly_expenses' in initialApplication && (
+        <section className="ntc-financial-summary" style={{ marginTop: '24px', padding: '24px', backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
+          <header style={{ marginBottom: '16px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em', color: 'var(--text-muted)' }}>FINANCIAL PROFILE</span>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--navy)', marginTop: '4px' }}>Financial Summary & Assessment</h2>
+          </header>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Annual Income</small>
+              <strong>{formatINR(initialApplication.annual_income)}</strong>
+            </div>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Monthly Income</small>
+              <strong>{formatINR((result as NTCPredictionResponse).monthly_income)}</strong>
+            </div>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Monthly Expenses</small>
+              <strong>{formatINR(initialApplication.monthly_expenses)}</strong>
+            </div>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Disposable Monthly Income</small>
+              <strong style={{ color: (result as NTCPredictionResponse).disposable_income < 0 ? 'var(--danger)' : 'var(--success)' }}>
+                {(result as NTCPredictionResponse).disposable_income < 0 ? '-' : ''}{formatINR(Math.abs((result as NTCPredictionResponse).disposable_income))}
+              </strong>
+            </div>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Expense Ratio</small>
+              <strong>{((result as NTCPredictionResponse).expense_ratio).toFixed(1)}%</strong>
+            </div>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Loan Requested</small>
+              <strong>{formatINR(requestedAmount)}</strong>
+            </div>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Repayment Tenure</small>
+              <strong>{initialApplication.loan_tenure} years</strong>
+            </div>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Employment Type</small>
+              <strong>{initialApplication.employment_type}</strong>
+            </div>
+            <div>
+              <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Dependents</small>
+              <strong>{initialApplication.dependents}</strong>
+            </div>
+            {'education' in initialApplication && (
+              <div>
+                <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Education</small>
+                <strong>{initialApplication.education}</strong>
+              </div>
+            )}
           </div>
-
-          <div>
-            <span className="max-loan-eyebrow">
-              MODEL CAPACITY ESTIMATION
-            </span>
-
-            <h2 id="max-loan-title">
-              Maximum Predicted Eligible Loan Amount
-            </h2>
+          
+          <div style={{ padding: '16px', backgroundColor: 'var(--surface-hover)', borderRadius: 'var(--radius-sm)', borderLeft: `4px solid ${(result as NTCPredictionResponse).disposable_income < 0 ? 'var(--danger)' : 'var(--primary)'}` }}>
+            <strong style={{ display: 'block', marginBottom: '8px', color: 'var(--navy)' }}>Financial Assessment</strong>
+            <p style={{ color: 'var(--text-body)', margin: 0, lineHeight: 1.5 }}>
+              Monthly expenses represent approximately <strong>{((result as NTCPredictionResponse).expense_ratio).toFixed(1)}%</strong> of monthly income, leaving <strong>{((result as NTCPredictionResponse).disposable_income < 0 ? '-' : '') + formatINR(Math.abs((result as NTCPredictionResponse).disposable_income))}</strong> of estimated disposable income.
+              {(result as NTCPredictionResponse).disposable_income < 0 && ' WARNING: Your estimated monthly expenses exceed your monthly income. This indicates severe financial stress and high repayment risk.'}
+            </p>
           </div>
-        </header>
+        </section>
+      )}
 
-        <div className="max-loan-grid">
+      {/* 2.6 NTC Estimated Loan Capacity */}
+      {isNTC && 'maximum_eligible_amount' in result && (
+        <section className="max-loan-panel" aria-labelledby="ntc-capacity-title" style={{ marginTop: '24px' }}>
+          <header className="max-loan-header">
+            <div className="max-loan-icon" aria-hidden="true">₹</div>
+            <div>
+              <span className="max-loan-eyebrow">MODEL CAPACITY ESTIMATION</span>
+              <h2 id="ntc-capacity-title">Estimated Loan Capacity</h2>
+            </div>
+          </header>
 
-          <div className="max-loan-metric-card requested-metric">
-            <span className="metric-label">
-              Requested Loan Amount
-            </span>
+          <div className="max-loan-grid">
+            <div className="max-loan-metric-card requested-metric">
+              <span className="metric-label">Your Requested Amount</span>
+              <strong className="metric-value">{formatINR((result as NTCPredictionResponse).requested_loan_amount)}</strong>
+              <span className="prob-pill">Status: {(result as NTCPredictionResponse).prediction}</span>
+            </div>
 
-            <strong className="metric-value">
-              {formatINR(requestedAmount)}
-            </strong>
-
-            <span
-              className={`status-pill ${
-                isApproved
-                  ? "pill-approved"
-                  : "pill-rejected"
-              }`}
-            >
-              Loan Approval: {result.prediction}
-            </span>
-          </div>
-
-          <div className="max-loan-metric-card eligible-metric">
-            <span className="metric-label">
-              Maximum Predicted Eligible Loan Amount
-            </span>
-
-            <strong className="metric-value">
-              {maxLoanStatus === "none_eligible"
-                ? "₹0"
-                : formatINR(maxEligibleAmount)}
-            </strong>
-
-            {maxLoanStatus !== "none_eligible" &&
-            maxEligibleAmount > 0 ? (
-              <span className="prob-pill">
-                Approved Probability:{" "}
-                {maxEligibleProb.toFixed(1)}%
-              </span>
-            ) : (
-              <span className="status-pill pill-rejected">
-                No Eligible Amount Found
-              </span>
+            <div className="max-loan-metric-card eligible-metric">
+              <span className="metric-label">Maximum Predicted Eligible Amount</span>
+              <strong className="metric-value" style={{ fontSize: (result as NTCPredictionResponse).maximum_eligible_amount === null ? '1.25rem' : undefined }}>
+                {(result as NTCPredictionResponse).maximum_eligible_amount !== null
+                  ? formatINR((result as NTCPredictionResponse).maximum_eligible_amount as number)
+                  : "No eligible amount found"}
+              </strong>
+              {(result as NTCPredictionResponse).maximum_eligible_amount !== null && (
+                <span className="prob-pill">
+                  Approval probability at this amount: {((result as NTCPredictionResponse).max_eligible_approved_probability * 100).toFixed(1)}%
+                </span>
+              )}
+            </div>
+            
+            {(result as NTCPredictionResponse).maximum_eligible_amount !== null && ((result as NTCPredictionResponse).maximum_eligible_amount as number) < (result as NTCPredictionResponse).requested_loan_amount && (
+              <div className="max-loan-metric-card requested-metric" style={{ backgroundColor: '#fff8f1', borderLeftColor: '#f59e0b' }}>
+                <span className="metric-label" style={{ color: '#b45309' }}>Suggested Reduction</span>
+                <strong className="metric-value" style={{ color: '#d97706' }}>
+                  {formatINR((result as NTCPredictionResponse).requested_loan_amount - ((result as NTCPredictionResponse).maximum_eligible_amount as number))}
+                </strong>
+              </div>
             )}
           </div>
 
-        </div>
+          <div className="max-loan-comparison-box comparison-within">
+            <p>{(result as NTCPredictionResponse).max_loan_message}</p>
+          </div>
 
-        <div
-          className={`max-loan-comparison-box ${
-            maxLoanStatus === "none_eligible"
-              ? "comparison-none"
-              : isRequestedAboveMax
-              ? "comparison-above"
-              : "comparison-within"
-          }`}
-        >
-          {maxLoanStatus === "none_eligible" ? (
-            <p>
-              Based on your current applicant profile, the
-              existing ML model does not predict approval for
-              any evaluated loan amount up to your requested
-              amount.
-            </p>
-          ) : isRequestedAboveMax ? (
-            <>
-              <p>
-                Your requested amount is above the model's
-                predicted eligible amount.
-              </p>
+          <small className="max-loan-disclaimer" style={{ display: 'block', marginTop: '16px' }}>
+            This is a model-predicted result based on the provided inputs, not a guaranteed bank loan approval.
+          </small>
+        </section>
+      )}
 
-              <p className="suggested-amount-highlight">
-                Suggested Maximum Amount:{" "}
-                <strong>
-                  {formatINR(maxEligibleAmount)}
+      {/* 3. Loan Amount What-If Analysis */}
+      {whatIf && !isNTC && (
+        <section className="max-loan-panel" aria-labelledby="whatif-title">
+          <header className="max-loan-header">
+            <div className="max-loan-icon" aria-hidden="true">₹</div>
+            <div>
+              <span className="max-loan-eyebrow">MODEL CAPACITY ESTIMATION</span>
+              <h2 id="whatif-title">Estimated Loan Capacity</h2>
+            </div>
+          </header>
+
+          <div className="max-loan-grid">
+            <div className="max-loan-metric-card requested-metric">
+              <span className="metric-label">Your Requested Amount</span>
+              <strong className="metric-value">{formatINR(whatIf.currentAmount)}</strong>
+              <span className="prob-pill">Current Approval Probability: {decisionProbability.toFixed(1)}%</span>
+            </div>
+
+            <div className="max-loan-metric-card eligible-metric">
+              <span className="metric-label">Maximum Predicted Eligible Amount</span>
+              <strong className="metric-value">
+                {whatIf.recommendedAmount !== null ? formatINR(whatIf.recommendedAmount) : "No eligible amount found"}
+              </strong>
+              {whatIf.recommendedAmount !== null && (
+                <span className="prob-pill">
+                  Approval probability at this amount: {whatIf.recommendedApprovalProbability.toFixed(1)}%
+                </span>
+              )}
+            </div>
+            
+            {whatIf.recommendedAmount !== null && whatIf.recommendedAmount < whatIf.currentAmount && (
+              <div className="max-loan-metric-card requested-metric" style={{ backgroundColor: '#fff8f1', borderLeftColor: '#f59e0b' }}>
+                <span className="metric-label" style={{ color: '#b45309' }}>Suggested Reduction</span>
+                <strong className="metric-value" style={{ color: '#d97706' }}>
+                  {formatINR(whatIf.currentAmount - whatIf.recommendedAmount)}
                 </strong>
-              </p>
-            </>
-          ) : (
-            <p>
-              Based on your current applicant profile, the
-              existing ML model predicts approval for your
-              requested amount.
-            </p>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
 
-        <small className="max-loan-disclaimer">
-          This is a model-predicted maximum eligible amount
-          based on the provided inputs, not a guaranteed bank
-          loan approval.
-        </small>
-      </section>
+          <div className="max-loan-comparison-box comparison-within">
+            {isApproved ? (
+              <p>Based on your current applicant profile, the existing ML model predicts approval for your requested amount of <strong>{formatINR(whatIf.currentAmount)}</strong>.</p>
+            ) : (
+              whatIf.recommendedAmount !== null ? (
+                <p>Your requested amount is above the model's predicted eligible amount. A lower amount of approximately <strong>{formatINR(whatIf.recommendedAmount)}</strong> received an approved model prediction.</p>
+              ) : (
+                <p>The current model did not estimate an approval probability above the eligibility threshold for the tested loan amounts.</p>
+              )
+            )}
+          </div>
+
+          {/* Scenario Table */}
+          <div style={{ marginTop: '24px' }}>
+            <strong style={{ display: 'block', marginBottom: '12px', color: 'var(--navy)', fontSize: '0.875rem' }}>Tested Lower Amounts</strong>
+            <div style={{ backgroundColor: 'white', borderRadius: '6px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                <thead style={{ backgroundColor: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+                  <tr>
+                    <th style={{ padding: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>Loan Amount</th>
+                    <th style={{ padding: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>Model Assessment</th>
+                    <th style={{ padding: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>Approval Probability</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {whatIf.scenarios.map((s, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid var(--border)', backgroundColor: s.loanAmount === whatIf.currentAmount ? 'var(--surface)' : 'transparent' }}>
+                      <td style={{ padding: '12px', fontWeight: s.loanAmount === whatIf.currentAmount ? 600 : 400, color: 'var(--text-body)' }}>
+                        {formatINR(s.loanAmount)} {s.loanAmount === whatIf.currentAmount && "(Requested)"}
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <span style={{ 
+                          fontSize: '0.75rem', 
+                          fontWeight: 600, 
+                          padding: '4px 8px', 
+                          borderRadius: '12px', 
+                          backgroundColor: s.status === 'ELIGIBLE' ? '#DDF4E4' : '#FDE8E4', 
+                          color: s.status === 'ELIGIBLE' ? '#1A6334' : '#992B2B' 
+                        }}>
+                          {s.status === 'ELIGIBLE' ? 'Favorable' : 'Not Favorable'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ flex: 1, height: '6px', backgroundColor: 'var(--surface)', borderRadius: '3px', overflow: 'hidden' }}>
+                          <div style={{ width: `${s.approvalProbability}%`, height: '100%', backgroundColor: s.status === 'ELIGIBLE' ? 'var(--forest-green)' : 'var(--terracotta)' }} />
+                        </div>
+                        <span style={{ width: '40px', textAlign: 'right', color: 'var(--text-secondary)' }}>{s.approvalProbability.toFixed(0)}%</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {!isApproved && whatIf.recommendedAmount === null && (
+              <p style={{ marginTop: '12px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                Reducing the requested amount did not materially change the model's assessment for this applicant.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
       {/* 4. Rejection Explainability Section */}
       {!isApproved && explanation && (
         <>
@@ -359,10 +386,11 @@ export default function PredictionResult({ result, initialApplication, onReset }
             <header className="explainability-header">
               <span className="explain-icon">◔</span>
               <div>
-                <span className="explain-eyebrow">MODEL EXPLAINABILITY</span>
-                <h2 id="why-result-heading">Why this result?</h2>
+                <span className="explain-eyebrow">ASSESSMENT CONTEXT</span>
+                <h2 id="why-result-heading">Factors Considered in This Assessment</h2>
                 <p>
-                  The model identified a few factors that had the strongest influence on this
+                  The machine learning model evaluated your application and
+                  identified the following primary factors that influenced this
                   assessment.
                 </p>
               </div>
@@ -393,21 +421,10 @@ export default function PredictionResult({ result, initialApplication, onReset }
                       id={accordionId}
                     >
                       <div className="accordion-trigger-left">
-                        <span className="impact-dot" aria-hidden="true">
-                          {getImpactDot(factor.impact_direction, factor.impact_level)}
-                        </span>
                         <span className="accordion-factor-label">{factor.label}</span>
                       </div>
 
                       <div className="accordion-trigger-right">
-                        <span
-                          className={`impact-badge ${getImpactBadgeClass(
-                            factor.impact_level,
-                            factor.impact_direction
-                          )}`}
-                        >
-                          {factor.impact_level}
-                        </span>
                         <span className="accordion-user-pill">
                           <span className="pill-muted">Your value:</span> {factor.user_value}
                         </span>
@@ -780,120 +797,7 @@ export default function PredictionResult({ result, initialApplication, onReset }
         </div>
       )}
 
-      {/* 5. NTC Insights Section (for New-To-Credit applicants) */}
-      {isNTCResult(result) && (
-        <section className="insights-panel" aria-labelledby="ntc-insights-title">
-          <header>
-            <span className="guide-icon">✦</span>
-            <div>
-              <p id="ntc-insights-title">Why the model made this prediction</p>
-              <small>These are the strongest factors that influenced this NTC assessment.</small>
-            </div>
-          </header>
-
-          <div className="insights-grid">
-            {ntcFactors.map((factor) => (
-              <article key={factor.feature} className="insight-card">
-                <span>{factor.impact >= 0 ? "↑" : "↓"}</span>
-                <div>
-                  <strong>
-                    {factor.feature.replace("remainder__", "").replaceAll("_", " ")}
-                  </strong>
-                  <small>
-                    {factor.impact >= 0 ? "Positive influence" : "Negative influence"}
-                  </small>
-                </div>
-                <b>
-                  {factor.impact >= 0 ? "+" : ""}
-                  {factor.impact.toFixed(3)}
-                </b>
-              </article>
-            ))}
-          </div>
-
-          <p className="guide-note">
-            SHAP values explain the direction and relative strength of each feature's contribution.
-            They are model explanations, not guarantees of approval or rejection.
-          </p>
-        </section>
-      )}
-
-      {/* 6. Interactive What-If Simulator */}
-      {initialApplication && (
-        <section className="simulator-panel" aria-labelledby="simulator-title">
-          <header>
-            <span className="guide-icon simulator-icon">🎛️</span>
-            <div>
-              <p id="simulator-title">Interactive What-If Simulator</p>
-              <small>Adjust loan terms to see how your approval odds change in real-time.</small>
-            </div>
-          </header>
-
-          <div className="simulator-content">
-            <div className="simulator-controls">
-              <div className="slider-group">
-                <div className="slider-header">
-                  <label>Loan Amount</label>
-                  <strong>₹{simulatedAmount.toLocaleString("en-IN")}</strong>
-                </div>
-                <input
-                  type="range"
-                  min="10000"
-                  max="1000000"
-                  step="5000"
-                  value={simulatedAmount}
-                  onChange={(e) => setSimulatedAmount(Number(e.target.value))}
-                  className="custom-range simulator-range"
-                  style={
-                    {
-                      "--range-progress": `${
-                        ((simulatedAmount - 10000) / (1000000 - 10000)) * 100
-                      }%`,
-                    } as React.CSSProperties
-                  }
-                />
-              </div>
-
-              <div className="slider-group">
-                <div className="slider-header">
-                  <label>Loan Tenure</label>
-                  <strong>{simulatedTenure} Months</strong>
-                </div>
-                <input
-                  type="range"
-                  min="6"
-                  max="60"
-                  step="6"
-                  value={simulatedTenure}
-                  onChange={(e) => setSimulatedTenure(Number(e.target.value))}
-                  className="custom-range simulator-range"
-                  style={
-                    {
-                      "--range-progress": `${((simulatedTenure - 6) / (60 - 6)) * 100}%`,
-                    } as React.CSSProperties
-                  }
-                />
-              </div>
-            </div>
-
-            <div className={`simulator-impact ${simulating ? "simulating" : ""}`}>
-              <span>Simulated Approval</span>
-              <strong className={simApproved > 50 ? "impact-good" : "impact-bad"}>
-                {simApproved.toFixed(1)}%
-              </strong>
-              {diff !== 0 && (
-                <div className={`impact-diff ${diff > 0 ? "diff-up" : "diff-down"}`}>
-                  {diff > 0 ? "↗" : "↘"} {Math.abs(diff).toFixed(1)}%{" "}
-                  {diff > 0 ? "improved" : "decreased"}
-                </div>
-              )}
-              {simulating && <small className="sim-loading">Calculating...</small>}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 7. End of Flow: Download Assessment Report + Check Another Application */}
+      {/* 6. End of Flow: Download Assessment Report + Check Another Application */}
       <div className="result-actions-bar">
         <button
           type="button"
