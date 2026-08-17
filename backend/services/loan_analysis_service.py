@@ -110,10 +110,11 @@ def generate_loan_amount_analysis(
         
         # If requested_amount is very small or weird
         if not coarse_candidates:
-            coarse_step = max(10000, requested_amount // 5)
-            coarse_step = max(10000, (coarse_step // 10000) * 10000)
+            coarse_step = max(1000, requested_amount // 5)
+            coarse_step = (coarse_step // 1000) * 1000
             coarse_candidates = []
             cand = requested_amount - coarse_step
+            cand = (cand // 1000) * 1000
             while cand > 0 and len(coarse_candidates) < 6:
                 coarse_candidates.append(cand)
                 cand -= coarse_step
@@ -150,12 +151,12 @@ def generate_loan_amount_analysis(
             recommended_amount = favorable_boundary
             recommended_prob = all_evaluated[recommended_amount]
         else:
-            # None are favorable. Return 0 to indicate no eligible amount.
-            recommended_amount = 0
+            # None are favorable. Return None to indicate no eligible amount.
+            recommended_amount = None
             recommended_prob = 0.0
 
     # ABSOLUTE VALIDATION RULE
-    if recommended_amount > requested_amount:
+    if recommended_amount is not None and recommended_amount > requested_amount:
         print(f"CRITICAL ERROR: recommended_amount ({recommended_amount}) > requested_amount ({requested_amount})")
         recommended_amount = requested_amount
         recommended_prob = current_approved_prob
