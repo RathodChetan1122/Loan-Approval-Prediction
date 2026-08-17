@@ -297,16 +297,16 @@ export default function PredictionResult({ result, initialApplication, onReset }
             <div className="max-loan-metric-card eligible-metric">
               <span className="metric-label">Maximum Predicted Eligible Amount</span>
               <strong className="metric-value">
-                {whatIf.recommendedAmount > 0 ? formatINR(whatIf.recommendedAmount) : "No eligible amount found"}
+                {whatIf.recommendedAmount !== null ? formatINR(whatIf.recommendedAmount) : "No eligible amount found"}
               </strong>
-              {whatIf.recommendedAmount > 0 && (
+              {whatIf.recommendedAmount !== null && (
                 <span className="prob-pill">
                   Approval probability at this amount: {whatIf.recommendedApprovalProbability.toFixed(1)}%
                 </span>
               )}
             </div>
             
-            {whatIf.recommendedAmount > 0 && whatIf.recommendedAmount < whatIf.currentAmount && (
+            {whatIf.recommendedAmount !== null && whatIf.recommendedAmount < whatIf.currentAmount && (
               <div className="max-loan-metric-card requested-metric" style={{ backgroundColor: '#fff8f1', borderLeftColor: '#f59e0b' }}>
                 <span className="metric-label" style={{ color: '#b45309' }}>Suggested Reduction</span>
                 <strong className="metric-value" style={{ color: '#d97706' }}>
@@ -320,17 +320,17 @@ export default function PredictionResult({ result, initialApplication, onReset }
             {isApproved ? (
               <p>Based on your current applicant profile, the existing ML model predicts approval for your requested amount of <strong>{formatINR(whatIf.currentAmount)}</strong>.</p>
             ) : (
-              whatIf.recommendedAmount > 0 ? (
+              whatIf.recommendedAmount !== null ? (
                 <p>Your requested amount is above the model's predicted eligible amount. A lower amount of approximately <strong>{formatINR(whatIf.recommendedAmount)}</strong> received an approved model prediction.</p>
               ) : (
-                <p>Based on your current applicant profile, the existing ML model does not predict approval for any evaluated loan amount up to your requested amount.</p>
+                <p>The current model did not estimate an approval probability above the eligibility threshold for the tested loan amounts.</p>
               )
             )}
           </div>
 
           {/* Scenario Table */}
           <div style={{ marginTop: '24px' }}>
-            <strong style={{ display: 'block', marginBottom: '12px', color: 'var(--navy)', fontSize: '0.875rem' }}>Loan Amount Simulation</strong>
+            <strong style={{ display: 'block', marginBottom: '12px', color: 'var(--navy)', fontSize: '0.875rem' }}>Tested Lower Amounts</strong>
             <div style={{ backgroundColor: 'white', borderRadius: '6px', border: '1px solid var(--border)', overflow: 'hidden' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
                 <thead style={{ backgroundColor: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
@@ -369,11 +369,13 @@ export default function PredictionResult({ result, initialApplication, onReset }
                 </tbody>
               </table>
             </div>
+            
+            {!isApproved && whatIf.recommendedAmount === null && (
+              <p style={{ marginTop: '12px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                Reducing the requested amount did not materially change the model's assessment for this applicant.
+              </p>
+            )}
           </div>
-
-          <small className="max-loan-disclaimer" style={{ display: 'block', marginTop: '16px' }}>
-            This is a model-based simulation, not a lender decision or guarantee of approval.
-          </small>
         </section>
       )}
       {/* 4. Rejection Explainability Section */}

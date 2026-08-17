@@ -332,11 +332,15 @@ def predict_ntc(data: dict):
         max_prediction = "Approved"
     else:
         # Case 2/3: Requested amount is rejected, search downward
-        coarse_step = max(50000, requested_amount // 10)
-        coarse_step = max(50000, (coarse_step // 50000) * 50000)
+        coarse_step = max(1000, requested_amount // 10)
+        if coarse_step >= 50000:
+            coarse_step = (coarse_step // 50000) * 50000
+        else:
+            coarse_step = (coarse_step // 1000) * 1000
         
         coarse_candidates = []
         cand = requested_amount - coarse_step
+        cand = (cand // 1000) * 1000
         while cand > 0 and len(coarse_candidates) < 10:
             coarse_candidates.append(cand)
             cand -= coarse_step
@@ -381,7 +385,7 @@ def predict_ntc(data: dict):
             maximum_eligible_amount = None
             max_eligible_approved_probability = 0.0
             max_loan_status = "none_eligible"
-            max_loan_message = "Based on your current applicant profile, the existing ML model does not predict approval for any evaluated loan amount up to your requested amount."
+            max_loan_message = "The current model did not estimate an approval probability above the eligibility threshold for the tested loan amounts."
             max_prediction = "Rejected"
 
     return {
