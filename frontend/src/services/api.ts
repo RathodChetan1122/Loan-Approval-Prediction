@@ -690,11 +690,11 @@ function simulateClientSideLoanPrediction(
     const isApproved = approvedProb >= 0.5;
 
     // Max Eligible Loan Calculation (Bidirectional Capacity Estimation)
-    let recommendedAmount: number | null = null;
-    let recommendedApprovalProb = 0;
-    let maxLoanStatus = "none_eligible";
-    let maxLoanMessage = "";
-    let mode: "UPWARD_CAPACITY" | "DOWNWARD_IMPROVEMENT" = isApproved ? "UPWARD_CAPACITY" : "DOWNWARD_IMPROVEMENT";
+    let recommendedAmount: number | null;
+    let recommendedApprovalProb: number;
+    let maxLoanStatus: string;
+    let maxLoanMessage: string;
+    let mode: "UPWARD_CAPACITY" | "DOWNWARD_IMPROVEMENT";
 
     const monthlyIncome = annual_income / 12;
     const maxAffordableMonthlyEMI = monthlyIncome * (credit_score >= 750 ? 0.55 : credit_score >= 700 ? 0.50 : credit_score >= 600 ? 0.40 : 0.25);
