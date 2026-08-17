@@ -2,7 +2,11 @@ from pathlib import Path
 
 import joblib
 import pandas as pd
-import shap
+
+try:
+    import shap
+except Exception:  # pragma: no cover - fallback for broken optional dependency
+    shap = None
 
 from services.ntc_suggestion_service import generate_ntc_suggestions
 from services.explainability_service import (
@@ -36,43 +40,48 @@ def _get_shap_explanation(input_data: pd.DataFrame) -> list[dict]:
     The input is transformed using the exact preprocessor
     stored inside ntc_pipeline.pkl.
     """
+    if shap is None:
+        return []
 
-    preprocessor = pipeline.named_steps["preprocessor"]
-    model = pipeline.named_steps["model"]
+    try:
+        preprocessor = pipeline.named_steps["preprocessor"]
+        model = pipeline.named_steps["model"]
 
-    transformed_data = preprocessor.transform(input_data)
+        transformed_data = preprocessor.transform(input_data)
 
-    feature_names = preprocessor.get_feature_names_out()
+        feature_names = preprocessor.get_feature_names_out()
 
-    explainer = shap.TreeExplainer(model)
+        explainer = shap.TreeExplainer(model)
 
-    shap_values = explainer.shap_values(transformed_data)
+        shap_values = explainer.shap_values(transformed_data)
 
-    # GradientBoostingClassifier binary classification
-    # returns one SHAP value per transformed feature.
-    if isinstance(shap_values, list):
-        values = shap_values[1]
-    else:
-        values = shap_values
+        # GradientBoostingClassifier binary classification
+        # returns one SHAP value per transformed feature.
+        if isinstance(shap_values, list):
+            values = shap_values[1]
+        else:
+            values = shap_values
 
-    values = values[0]
+        values = values[0]
 
-    explanation = []
+        explanation = []
 
-    for feature_name, value in zip(feature_names, values):
-        explanation.append(
-            {
-                "feature": feature_name,
-                "impact": round(float(value), 6),
-            }
+        for feature_name, value in zip(feature_names, values):
+            explanation.append(
+                {
+                    "feature": feature_name,
+                    "impact": round(float(value), 6),
+                }
+            )
+
+        explanation.sort(
+            key=lambda item: abs(item["impact"]),
+            reverse=True,
         )
 
-    explanation.sort(
-        key=lambda item: abs(item["impact"]),
-        reverse=True,
-    )
-
-    return explanation[:10]
+        return explanation[:10]
+    except Exception:
+        return []
 
 
 def predict_ntc(data: dict):

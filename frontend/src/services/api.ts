@@ -466,6 +466,8 @@ A shorter tenure generally means higher EMIs but can reduce total interest. A lo
             /\bhello\b/i,
             /\bhi\b/i,
             /\bhey\b/i,
+            /\bhow\s*are\s*you\b/i,
+            /\bgood\s*morning\b/i,
             /\bwho\s*are\s*you\b/i,
             /\bwhat\s*can\s*you\s*do\b/i,
             /\bhelp\b/i,
@@ -487,6 +489,30 @@ Ask me a financial question and I'll help you understand it.`,
             "What is a loan and how does it work?",
             "How can I improve my CIBIL score?",
             "Why do loans get rejected?",
+        ],
+    },
+    {
+        patterns: [
+            /\bfood\b/i,
+            /\bsports\b/i,
+            /\bcricket\b/i,
+            /\bweather\b/i,
+            /\bmovies?\b/i,
+            /\brecipe\b/i,
+            /\bjoke\b/i,
+            /\begg\b/i,
+            /\bpolitics\b/i,
+            /\bgames?\b/i,
+        ],
+        reply: `### 🤖 I am a Financial Assistant
+
+I specialize in personal finance, loans, interest rates, and credit scores. I am not equipped to discuss off-topic subjects like food, sports, or entertainment.
+
+Can I help you with a loan or financial query instead?`,
+        suggestions: [
+            "What is a personal loan?",
+            "How does EMI calculation work?",
+            "How can I check my credit score?",
         ],
     },
 ];
