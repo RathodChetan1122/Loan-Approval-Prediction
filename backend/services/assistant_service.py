@@ -417,6 +417,22 @@ def process_chat_message(
             elif isinstance(item, dict):
                 history_list.append(item)
 
+    # Check if the message matches any pre-defined knowledge base topics first
+    lower_message = message.lower().strip()
+    for kb in KNOWLEDGE_BASE:
+        for keyword in kb["keywords"]:
+            if keyword in lower_message:
+                return {
+                    "reply": kb["reply"],
+                    "suggestions": kb.get("suggestions", [
+                        "What documents are required for quick approval?",
+                        "How does my CIBIL score affect interest rates?",
+                        "How can I lower my monthly EMI burden?"
+                    ]),
+                    "model": "local-knowledge-base",
+                    "status": "success",
+                }
+
     # Call Gemini API exclusively
     gemini_reply = _call_gemini_api(message, history_list, context)
 
