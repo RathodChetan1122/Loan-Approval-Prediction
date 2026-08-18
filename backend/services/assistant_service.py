@@ -326,10 +326,9 @@ def _call_gemini_api(message: str, history: List[dict], context: Optional[dict] 
 
     # Supported fast model endpoints
     models_to_try = [
-        "gemini-3.5-flash",
-        "gemini-flash-latest",
-        "gemini-2.5-flash",
-        "gemini-2.5-pro"
+        "gemini-1.5-flash",
+        "gemini-1.5-pro",
+        "gemini-pro"
     ]
 
     # Inject Knowledge Base into System Instruction
