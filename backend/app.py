@@ -65,6 +65,10 @@ app.add_middleware(
 # ROUTES
 # ============================================================
 
+@app.get("/")
+def read_root():
+    return {"message": "Loan Approval Prediction API is running. Visit /docs for the API documentation."}
+
 # Existing loan prediction + maximum eligible loan endpoints
 app.include_router(router)
 
