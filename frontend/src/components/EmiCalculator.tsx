@@ -40,7 +40,6 @@ export default function EmiCalculator({ onBack, onStartAssessment }: EmiCalculat
   const [calculationResult, setCalculationResult] = useState<EmiCalculationResult | null>(null);
 
   const {
-    register,
     handleSubmit,
     setValue,
     reset,

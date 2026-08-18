@@ -812,6 +812,7 @@ function CurrencyInput({
   label: string;
   placeholder: string;
   name: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   control: any;
   hint: string;
 }) {

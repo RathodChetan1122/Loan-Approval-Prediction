@@ -186,6 +186,7 @@ export default function LoanForm({ onSubmit, loading, onBack }: Props) {
 
 import { NumericFormat } from "react-number-format";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function CurrencyInput({ label, placeholder, name, control, hint }: { label: string; placeholder: string; name: string; control: any; hint: string }) {
   return (
     <div className="input-area">
