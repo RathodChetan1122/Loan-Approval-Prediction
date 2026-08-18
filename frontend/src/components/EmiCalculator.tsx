@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { TenureUnit, EmiCalculationResult } from "../types/emi";
 import { calculateEmi, formatIndianCurrency } from "../utils/emiCalculator";
+import { NumericFormat } from "react-number-format";
 
 const emiFormSchema = z.object({
   loanAmount: z
@@ -142,15 +143,26 @@ export default function EmiCalculator({ onBack, onStartAssessment }: EmiCalculat
               </div>
               <div className={`emi-input-wrap ${errors.loanAmount ? "has-error" : ""}`}>
                 <span className="input-prefix" aria-hidden="true">₹</span>
-                <input
-                  id="emi-loan-amount"
-                  type="number"
-                  inputMode="numeric"
-                  min="1"
-                  step="any"
-                  placeholder="e.g. 10,00,000"
-                  className="emi-input"
-                  {...register("loanAmount", { valueAsNumber: true })}
+                <Controller
+                  name="loanAmount"
+                  control={control}
+                  render={({ field: { onChange, onBlur, value, ref } }) => (
+                    <NumericFormat
+                      id="emi-loan-amount"
+                      getInputRef={ref}
+                      className="emi-input"
+                      placeholder="e.g. 10,00,000"
+                      thousandSeparator=","
+                      thousandsGroupStyle="lakh"
+                      allowNegative={false}
+                      isAllowed={({ value }) => value.length <= 8}
+                      value={value}
+                      onBlur={onBlur}
+                      onValueChange={(values) => {
+                        onChange(values.floatValue);
+                      }}
+                    />
+                  )}
                 />
               </div>
               <p className="emi-field-hint">Enter the total amount you plan to borrow</p>
@@ -172,15 +184,25 @@ export default function EmiCalculator({ onBack, onStartAssessment }: EmiCalculat
               </div>
               <div className={`emi-input-wrap ${errors.interestRate ? "has-error" : ""}`}>
                 <span className="input-prefix" aria-hidden="true">%</span>
-                <input
-                  id="emi-interest-rate"
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="0.01"
-                  placeholder="e.g. 8.5"
-                  className="emi-input"
-                  {...register("interestRate", { valueAsNumber: true })}
+                <Controller
+                  name="interestRate"
+                  control={control}
+                  render={({ field: { onChange, onBlur, value, ref } }) => (
+                    <NumericFormat
+                      id="emi-interest-rate"
+                      getInputRef={ref}
+                      className="emi-input"
+                      placeholder="e.g. 8.5"
+                      allowNegative={false}
+                      decimalScale={2}
+                      isAllowed={({ value }) => value.length <= 8}
+                      value={value}
+                      onBlur={onBlur}
+                      onValueChange={(values) => {
+                        onChange(values.floatValue);
+                      }}
+                    />
+                  )}
                 />
               </div>
               <p className="emi-field-hint">Enter the expected annual interest rate (e.g. 8.5)</p>
@@ -202,15 +224,25 @@ export default function EmiCalculator({ onBack, onStartAssessment }: EmiCalculat
               </div>
               <div className="emi-tenure-control">
                 <div className={`emi-input-wrap tenure-input-wrap ${errors.tenure ? "has-error" : ""}`}>
-                  <input
-                    id="emi-tenure"
-                    type="number"
-                    inputMode="numeric"
-                    min="1"
-                    step="1"
-                    placeholder={tenureUnit === "years" ? "e.g. 5" : "e.g. 60"}
-                    className="emi-input"
-                    {...register("tenure", { valueAsNumber: true })}
+                  <Controller
+                    name="tenure"
+                    control={control}
+                    render={({ field: { onChange, onBlur, value, ref } }) => (
+                      <NumericFormat
+                        id="emi-tenure"
+                        getInputRef={ref}
+                        className="emi-input"
+                        placeholder={tenureUnit === "years" ? "e.g. 5" : "e.g. 60"}
+                        allowNegative={false}
+                        decimalScale={0}
+                        isAllowed={({ value }) => value.length <= 8}
+                        value={value}
+                        onBlur={onBlur}
+                        onValueChange={(values) => {
+                          onChange(values.floatValue);
+                        }}
+                      />
+                    )}
                   />
                 </div>
                 <div className="tenure-unit-toggle" role="radiogroup" aria-label="Tenure Unit">

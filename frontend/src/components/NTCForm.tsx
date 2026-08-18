@@ -2,10 +2,9 @@ import { useState } from "react";
 import {
   useForm,
   useWatch,
+  Controller,
 } from "react-hook-form";
-import type {
-  UseFormRegisterReturn,
-} from "react-hook-form";
+
 import {
   zodResolver,
 } from "@hookform/resolvers/zod";
@@ -178,12 +177,14 @@ const education = [
 interface Props {
   onSubmit: (data: NTCApplication) => void;
   loading: boolean;
+  onBack?: () => void;
 }
 
 
 export default function NTCForm({
   onSubmit,
   loading,
+  onBack,
 }: Props) {
 
   const {
@@ -203,7 +204,7 @@ export default function NTCForm({
       annual_income: undefined,
       monthly_expenses: undefined,
       loan_amount: undefined,
-      loan_tenure: 10,
+      loan_tenure: 5,
       education: "Graduate",
     },
   });
@@ -230,7 +231,7 @@ export default function NTCForm({
 
 
   const tenure =
-    values.loan_tenure ?? 10;
+    values.loan_tenure ?? 5;
 
 
   const moveNext = async () => {
@@ -571,12 +572,8 @@ export default function NTCForm({
           <CurrencyInput
             label="Annual income"
             placeholder="6,00,000"
-            registration={register(
-              "annual_income",
-              {
-                valueAsNumber: true,
-              }
-            )}
+            name="annual_income"
+            control={control}
             hint="Example: ₹6,00,000 per year"
           />
         )}
@@ -587,12 +584,8 @@ export default function NTCForm({
           <CurrencyInput
             label="Monthly expenses"
             placeholder="25,000"
-            registration={register(
-              "monthly_expenses",
-              {
-                valueAsNumber: true,
-              }
-            )}
+            name="monthly_expenses"
+            control={control}
             hint="Example: ₹25,000 per month"
           />
         )}
@@ -604,12 +597,8 @@ export default function NTCForm({
           <CurrencyInput
             label="Loan amount"
             placeholder="15,00,000"
-            registration={register(
-              "loan_amount",
-              {
-                valueAsNumber: true,
-              }
-            )}
+            name="loan_amount"
+            control={control}
             hint="Requested principal amount"
           />
         )}
@@ -756,10 +745,14 @@ export default function NTCForm({
           type="button"
           className="back-button"
           disabled={
-            currentStep === 0 ||
+            (!onBack && currentStep === 0) ||
             loading
           }
           onClick={() => {
+            if (currentStep === 0 && onBack) {
+              onBack();
+              return;
+            }
             setHelpOpen(false);
 
             setCurrentStep(
@@ -807,20 +800,23 @@ export default function NTCForm({
 }
 
 
+import { NumericFormat } from "react-number-format";
+
 function CurrencyInput({
   label,
   placeholder,
-  registration,
+  name,
+  control,
   hint,
 }: {
   label: string;
   placeholder: string;
-  registration: UseFormRegisterReturn;
+  name: string;
+  control: any;
   hint: string;
 }) {
   return (
     <div className="input-area">
-
       <label
         className="sr-only"
         htmlFor={label}
@@ -830,21 +826,31 @@ function CurrencyInput({
 
       <div className="currency-input">
         <span>₹</span>
-
-        <input
-          id={label}
-          type="number"
-          min="0"
-          inputMode="numeric"
-          placeholder={placeholder}
-          {...registration}
+        <Controller
+          name={name}
+          control={control}
+          render={({ field: { onChange, onBlur, value, ref } }) => (
+            <NumericFormat
+              id={label}
+              getInputRef={ref}
+              placeholder={placeholder}
+              thousandSeparator=","
+              thousandsGroupStyle="lakh"
+              allowNegative={false}
+              isAllowed={({ value }) => value.length <= 8}
+              value={value}
+              onBlur={onBlur}
+              onValueChange={(values) => {
+                onChange(values.floatValue);
+              }}
+            />
+          )}
         />
       </div>
 
       <p className="input-hint">
         {hint}
       </p>
-
     </div>
   );
 }

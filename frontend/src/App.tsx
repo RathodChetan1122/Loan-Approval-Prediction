@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import "./App.css";
 
 import AiFloatingButton from "./components/AiFloatingButton";
@@ -24,17 +25,6 @@ import type {
   NTCPredictionResponse,
   PredictionResponse,
 } from "./types/loan";
-
-type View =
-  | "welcome"
-  | "assessment"
-  | "ntc-assessment"
-  | "result"
-  | "ntc-result"
-  | "calculator"
-  | "model-performance"
-  | "assistant"
-  | "quiz";
 
 function ShieldIcon() {
   return (
@@ -104,10 +94,9 @@ function MoonIcon() {
 }
 
 export default function App() {
-  const [view, setView] = useState<View>("welcome");
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [previousView, setPreviousView] =
-    useState<View>("welcome");
 
   const [result, setResult] =
     useState<PredictionResponse | null>(null);
@@ -127,19 +116,17 @@ export default function App() {
   const [error, setError] =
     useState<string | null>(null);
 
-  const [theme, setTheme] =
-    useState<"light" | "dark">("light");
-
   useEffect(() => {
-    document.body.setAttribute(
-      "data-theme",
-      theme
-    );
-  }, [theme]);
+    // On refresh/initial load, cancel all tabs and redirect to home
+    if (window.location.pathname !== "/") {
+      navigate("/", { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const startAssessment = () => {
     setError(null);
-    setView("assessment");
+    navigate("/assessment");
 
     window.scrollTo({
       top: 0,
@@ -159,7 +146,7 @@ export default function App() {
         await predictLoan(loanApplication);
 
       setResult(response);
-      setView("result");
+      navigate("/result");
 
       window.scrollTo({
         top: 0,
@@ -177,7 +164,7 @@ export default function App() {
   const startNTCAssessment = () => {
     setError(null);
     setNtcResult(null);
-    setView("ntc-assessment");
+    navigate("/ntc-assessment");
 
     window.scrollTo({
       top: 0,
@@ -197,7 +184,7 @@ export default function App() {
         await predictNTC(ntcApplication);
 
       setNtcResult(response);
-      setView("ntc-result");
+      navigate("/ntc-result");
 
       window.scrollTo({
         top: 0,
@@ -215,11 +202,10 @@ export default function App() {
   const toggleAssistant = () => {
     setError(null);
 
-    if (view === "assistant") {
-      setView(previousView || "welcome");
+    if (location.pathname === "/assistant") {
+      navigate(-1);
     } else {
-      setPreviousView(view);
-      setView("assistant");
+      navigate("/assistant");
     }
 
     window.scrollTo({
@@ -230,7 +216,7 @@ export default function App() {
 
   const openCalculator = () => {
     setError(null);
-    setView("calculator");
+    navigate("/calculator");
 
     window.scrollTo({
       top: 0,
@@ -241,11 +227,10 @@ export default function App() {
   const toggleQuiz = () => {
     setError(null);
 
-    if (view === "quiz") {
-      setView(previousView || "welcome");
+    if (location.pathname === "/quiz") {
+      navigate(-1);
     } else {
-      setPreviousView(view);
-      setView("quiz");
+      navigate("/quiz");
     }
 
     window.scrollTo({
@@ -256,10 +241,7 @@ export default function App() {
 
   const openQuiz = () => {
     setError(null);
-    if (view !== "quiz") {
-      setPreviousView(view);
-    }
-    setView("quiz");
+    navigate("/quiz");
 
     window.scrollTo({
       top: 0,
@@ -273,8 +255,17 @@ export default function App() {
     setNtcResult(null);
     setNtcApplication(null);
     setError(null);
-    setView("welcome");
-    setPreviousView("welcome");
+    navigate("/");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+  const goBack = () => {
+    setError(null);
+    navigate(-1);
 
     window.scrollTo({
       top: 0,
@@ -301,38 +292,7 @@ export default function App() {
           aria-label="Main navigation"
         >
 
-          <button
-            type="button"
-            className="theme-toggle nav-link-btn"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-            }}
-            onClick={() =>
-              setTheme((currentTheme) =>
-                currentTheme === "light"
-                  ? "dark"
-                  : "light"
-              )
-            }
-            aria-label={`Switch to ${theme === "light"
-              ? "dark"
-              : "light"
-              } theme`}
-          >
-            {theme === "light" ? (
-              <>
-                <MoonIcon />
-                Dark Mode
-              </>
-            ) : (
-              <>
-                <SunIcon />
-                Light Mode
-              </>
-            )}
-          </button>
+
 
           <button
             type="button"
@@ -344,9 +304,13 @@ export default function App() {
 
           <a
             href="#how-it-works"
-            onClick={() => {
-              if (view !== "welcome") {
-                reset();
+            onClick={(e) => {
+              if (location.pathname !== "/") {
+                e.preventDefault();
+                navigate("/");
+                setTimeout(() => {
+                  document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
+                }, 100);
               }
             }}
           >
@@ -355,9 +319,13 @@ export default function App() {
 
           <a
             href="#credit-guide"
-            onClick={() => {
-              if (view !== "welcome") {
-                reset();
+            onClick={(e) => {
+              if (location.pathname !== "/") {
+                e.preventDefault();
+                navigate("/");
+                setTimeout(() => {
+                  document.getElementById("credit-guide")?.scrollIntoView({ behavior: "smooth" });
+                }, 100);
               }
             }}
           >
@@ -389,92 +357,93 @@ export default function App() {
 
       <div className="main-container">
 
-        {view === "welcome" && (
-          <WelcomeDashboard
-            onStart={startAssessment}
-            onKnowScore={startAssessment}
-            onContinueAfterCibil={
-              startNTCAssessment
-            }
-            onViewPerformance={() => {
-              setView("model-performance");
+        <Routes>
+          <Route path="/" element={
+            <WelcomeDashboard
+              onStart={startAssessment}
+              onKnowScore={startAssessment}
+              onContinueAfterCibil={
+                startNTCAssessment
+              }
+              onViewPerformance={() => {
+                navigate("/model-performance");
 
-              window.scrollTo({
-                top: 0,
-                behavior: "smooth",
-              });
-            }}
-            onOpenCalculator={openCalculator}
-            onOpenAssistant={toggleAssistant}
-            onOpenQuiz={openQuiz}
-          />
-        )}
-
-        {view === "assessment" && (
-          <LoanForm
-            onSubmit={handlePrediction}
-            loading={loading}
-          />
-        )}
-
-        {view === "ntc-assessment" && (
-          <NTCForm
-            onSubmit={handleNTCPrediction}
-            loading={loading}
-          />
-        )}
-
-        {view === "result" &&
-          result &&
-          application && (
-            <PredictionResult
-              result={result}
-              initialApplication={application}
-              onReset={reset}
+                window.scrollTo({
+                  top: 0,
+                  behavior: "smooth",
+                });
+              }}
+              onOpenCalculator={openCalculator}
+              onOpenAssistant={toggleAssistant}
+              onOpenQuiz={openQuiz}
             />
-          )}
+          } />
 
-        {view === "ntc-result" &&
-          ntcResult && (
-            <PredictionResult
-              result={ntcResult}
-              initialApplication={ntcApplication ?? undefined}
-              onReset={reset}
+          <Route path="/assessment" element={
+            <LoanForm
+              onSubmit={handlePrediction}
+              loading={loading}
+              onBack={goBack}
             />
-          )}
+          } />
 
-        {view === "assistant" && (
-          <AiLoanAssistant
-            onBack={() =>
-              setView(
-                previousView || "welcome"
-              )
-            }
-            applicationContext={application}
-          />
-        )}
+          <Route path="/ntc-assessment" element={
+            <NTCForm
+              onSubmit={handleNTCPrediction}
+              loading={loading}
+              onBack={goBack}
+            />
+          } />
 
-        {view === "calculator" && (
-          <EmiCalculator
-            onBack={reset}
-            onStartAssessment={
-              startAssessment
-            }
-          />
-        )}
+          <Route path="/result" element={
+            result && application ? (
+              <PredictionResult
+                result={result}
+                initialApplication={application}
+                onReset={reset}
+              />
+            ) : null
+          } />
 
-        {view === "model-performance" && (
-          <ModelPerformance
-            onBack={reset}
-          />
-        )}
+          <Route path="/ntc-result" element={
+            ntcResult ? (
+              <PredictionResult
+                result={ntcResult}
+                initialApplication={ntcApplication ?? undefined}
+                onReset={reset}
+              />
+            ) : null
+          } />
 
-        {view === "quiz" && (
-          <FinancialQuiz
-            onBack={reset}
-            onStartAssessment={startAssessment}
-          />
-        )}
+          <Route path="/assistant" element={
+            <AiLoanAssistant
+              onBack={goBack}
+              applicationContext={application}
+            />
+          } />
+
+          <Route path="/calculator" element={
+            <EmiCalculator
+              onBack={goBack}
+              onStartAssessment={
+                startAssessment
+              }
+            />
+          } />
+
+          <Route path="/model-performance" element={
+            <ModelPerformance
+              onBack={goBack}
+            />
+          } />
+
+          <Route path="/quiz" element={
+            <FinancialQuiz
+              onBack={goBack}
+              onStartAssessment={startAssessment}
+            />
+          } />
+        </Routes>
 
         {error && (
           <div
@@ -505,12 +474,12 @@ export default function App() {
 
       <QuizFloatingButton
         onClick={toggleQuiz}
-        isOpen={view === "quiz"}
+        isOpen={location.pathname === "/quiz"}
       />
 
       <AiFloatingButton
         onClick={toggleAssistant}
-        isOpen={view === "assistant"}
+        isOpen={location.pathname === "/assistant"}
       />
 
     </main>
