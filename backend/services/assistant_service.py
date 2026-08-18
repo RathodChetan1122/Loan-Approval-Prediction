@@ -321,7 +321,7 @@ def _call_gemini_api(message: str, history: List[dict], context: Optional[dict] 
     Supports GEMINI_API_KEY or GOOGLE_API_KEY environment variables.
     """
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    if not api_key or api_key == "your_gemini_api_key_here" or not api_key.startswith("AIzaSy"):
+    if not api_key or api_key == "your_gemini_api_key_here":
         return "### ⚠️ Configuration Required\n\nTo use the AI Assistant, you must add your **GEMINI_API_KEY** to the `.env` file or environment variables in your deployment dashboard."
 
     # Supported fast model endpoints
