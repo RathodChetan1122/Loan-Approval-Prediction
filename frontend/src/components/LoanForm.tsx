@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
-import type { UseFormRegisterReturn } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { LoanApplication } from "../types/loan";
@@ -32,9 +32,9 @@ const employment = [
 ] as const;
 const education = [["Graduate", "▤"], ["Post Graduate", "▦"], ["PhD", "✦"], ["High School", "▧"], ["Diploma", "◇"], ["No Formal", "○"]] as const;
 
-interface Props { onSubmit: (data: LoanApplication) => void; loading: boolean }
-export default function LoanForm({ onSubmit, loading }: Props) {
-  const { control, register, setValue, trigger, handleSubmit, formState: { errors } } = useForm<LoanFormData>({ resolver: zodResolver(loanSchema), mode: "onTouched", defaultValues: { dependents: 0, employment_type: "Private", credit_score: 655, loan_tenure: 10, education: "Graduate" } });
+interface Props { onSubmit: (data: LoanApplication) => void; loading: boolean; onBack?: () => void; }
+export default function LoanForm({ onSubmit, loading, onBack }: Props) {
+  const { control, register, setValue, trigger, handleSubmit, formState: { errors } } = useForm<LoanFormData>({ resolver: zodResolver(loanSchema), mode: "onTouched", defaultValues: { dependents: 0, employment_type: "Private", credit_score: 655, loan_tenure: 5, education: "Graduate" } });
   const [currentStep, setCurrentStep] = useState(0);
   const [helpOpen, setHelpOpen] = useState(false);
   const values = useWatch({ control });
@@ -122,8 +122,8 @@ export default function LoanForm({ onSubmit, loading }: Props) {
               </div>
             )}
 
-            {step.field === "annual_income" && <CurrencyInput label="Annual income" placeholder="6,00,000" registration={register("annual_income", { valueAsNumber: true })} hint="Example: ₹6,00,000 per year" />}
-            {step.field === "loan_amount" && <CurrencyInput label="Loan amount" placeholder="15,00,000" registration={register("loan_amount", { valueAsNumber: true })} hint="Requested principal amount" />}
+            {step.field === "annual_income" && <CurrencyInput label="Annual income" placeholder="6,00,000" name="annual_income" control={control} hint="Example: ₹6,00,000 per year" />}
+            {step.field === "loan_amount" && <CurrencyInput label="Loan amount" placeholder="15,00,000" name="loan_amount" control={control} hint="Requested principal amount" />}
             {step.field === "credit_score" && (
               <section className="credit-score-card" aria-label="Credit score selection">
                 <CreditScoreGauge score={score} />
@@ -170,7 +170,7 @@ export default function LoanForm({ onSubmit, loading }: Props) {
           </section>
 
           <nav className="form-navigation" aria-label="Assessment navigation">
-            <button type="button" className="back-button" disabled={currentStep === 0 || loading} onClick={() => { setHelpOpen(false); setCurrentStep((value) => Math.max(0, value - 1)); }}>
+            <button type="button" className="back-button" disabled={(!onBack && currentStep === 0) || loading} onClick={() => { if (currentStep === 0 && onBack) { onBack(); } else { setHelpOpen(false); setCurrentStep((value) => Math.max(0, value - 1)); } }}>
               ← <span>Back</span>
             </button>
             <button type="button" className="continue-button" disabled={loading} onClick={moveNext}>
@@ -184,6 +184,37 @@ export default function LoanForm({ onSubmit, loading }: Props) {
   );
 }
 
-function CurrencyInput({ label, placeholder, registration, hint }: { label: string; placeholder: string; registration: UseFormRegisterReturn; hint: string }) {
-  return <div className="input-area"><label className="sr-only" htmlFor={label}>{label}</label><div className="currency-input"><span>₹</span><input id={label} type="number" min="0" inputMode="numeric" placeholder={placeholder} {...registration} /></div><p className="input-hint">{hint}</p></div>;
+import { NumericFormat } from "react-number-format";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function CurrencyInput({ label, placeholder, name, control, hint }: { label: string; placeholder: string; name: string; control: any; hint: string }) {
+  return (
+    <div className="input-area">
+      <label className="sr-only" htmlFor={label}>{label}</label>
+      <div className="currency-input">
+        <span>₹</span>
+        <Controller
+          name={name}
+          control={control}
+          render={({ field: { onChange, onBlur, value, ref } }) => (
+            <NumericFormat
+              id={label}
+              getInputRef={ref}
+              placeholder={placeholder}
+              thousandSeparator=","
+              thousandsGroupStyle="lakh"
+              allowNegative={false}
+              isAllowed={({ value }) => value.length <= 8}
+              value={value}
+              onBlur={onBlur}
+              onValueChange={(values) => {
+                onChange(values.floatValue);
+              }}
+            />
+          )}
+        />
+      </div>
+      <p className="input-hint">{hint}</p>
+    </div>
+  );
 }

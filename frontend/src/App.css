@@ -24,17 +24,41 @@
   background: radial-gradient(circle at 0 15%, rgba(43, 58, 46, .07), transparent 28%), var(--background);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 .topbar,
 .main-container {
   width: min(1200px, calc(100% - 48px));
-  margin: auto;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .topbar {
-  height: 84px;
+  height: 72px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: sticky;
+  top: 20px;
+  z-index: 1000;
+  background: rgba(253, 252, 249, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 50px;
+  padding: 0 32px;
+  box-shadow: 0 10px 40px rgba(26, 26, 23, 0.08);
+  border: 1px solid rgba(228, 225, 216, 0.6);
+  margin-top: 20px;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+}
+
+body[data-theme="dark"] .topbar {
+  background: rgba(24, 25, 21, 0.85);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
 .brand,

@@ -16,6 +16,7 @@ SYSTEM_INSTRUCTION = """You are "LoanWise AI", an expert Loan & Financial Assist
 Tone and Style:
 - Direct, clear, professional, educational, and structured with clear headings, bullet points, bold key terms, and actionable takeaways.
 - Provide immediate, direct answers to the exact question asked without generic deflection.
+- If the user asks a question that is NOT related to finance or loans, you MUST STILL answer it helpfully and accurately as a general AI assistant. Do not refuse to answer off-topic questions.
 - When relevant, offer tips on how to improve borrowing outcomes.
 """
 
@@ -321,7 +322,7 @@ def _call_gemini_api(message: str, history: List[dict], context: Optional[dict] 
     """
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if not api_key or api_key == "your_gemini_api_key_here" or not api_key.startswith("AIzaSy"):
-        return None
+        return "### ⚠️ Configuration Required\n\nTo use the AI Assistant, you must add your **GEMINI_API_KEY** to the `.env` file or environment variables in your deployment dashboard."
 
     # Supported fast model endpoints
     models_to_try = [
@@ -330,22 +331,31 @@ def _call_gemini_api(message: str, history: List[dict], context: Optional[dict] 
         "gemini-1.5-flash",
     ]
 
-    full_system = SYSTEM_INSTRUCTION
+    # Inject Knowledge Base into System Instruction
+    full_system = SYSTEM_INSTRUCTION + "\n\nPre-defined Knowledge Base (Always use this exact info when asked about these topics):\n"
+    for kb in KNOWLEDGE_BASE:
+        full_system += f"- {kb['reply']}\n"
+
     if context:
         full_system += f"\n\nApplicant Financial Context:\n{json.dumps(context, indent=2)}"
 
-    contents = []
+    # Merge consecutive messages with the same role to strictly alternate
+    raw_contents = []
     for item in history[-6:]:
         role = "user" if item.get("role") == "user" else "model"
-        contents.append({
-            "role": role,
-            "parts": [{"text": item.get("content", "")}]
-        })
+        raw_contents.append({"role": role, "text": item.get("content", "")})
+    
+    raw_contents.append({"role": "user", "text": message})
 
-    contents.append({
-        "role": "user",
-        "parts": [{"text": message}]
-    })
+    contents = []
+    for item in raw_contents:
+        if contents and contents[-1]["role"] == item["role"]:
+            contents[-1]["parts"][0]["text"] += "\n\n" + item["text"]
+        else:
+            contents.append({
+                "role": item["role"],
+                "parts": [{"text": item["text"]}]
+            })
 
     payload = {
         "systemInstruction": {
@@ -356,7 +366,10 @@ def _call_gemini_api(message: str, history: List[dict], context: Optional[dict] 
             "temperature": 0.4,
             "topP": 0.9,
             "maxOutputTokens": 1024,
-        }
+        },
+        "tools": [
+            {"googleSearch": {}}
+        ]
     }
 
     for model_name in models_to_try:
@@ -368,7 +381,7 @@ def _call_gemini_api(message: str, history: List[dict], context: Optional[dict] 
                 headers={"Content-Type": "application/json"},
                 method="POST"
             )
-            with urllib.request.urlopen(req, timeout=12) as response:
+            with urllib.request.urlopen(req, timeout=30) as response:
                 if response.status == 200:
                     resp_data = json.loads(response.read().decode("utf-8"))
                     candidates = resp_data.get("candidates", [])
@@ -376,68 +389,14 @@ def _call_gemini_api(message: str, history: List[dict], context: Optional[dict] 
                         parts = candidates[0].get("content", {}).get("parts", [])
                         if parts:
                             return parts[0].get("text", "").strip()
-        except Exception:
+        except Exception as e:
+            print(f"Gemini API Error for model {model_name}: {e}")
             continue
 
     return None
 
 
-def _get_fallback_reply(message: str, context: Optional[dict] = None) -> tuple[str, List[str]]:
-    """
-    Generate an intelligent, topic-specific expert financial response when Gemini API is offline or without key.
-    """
-    msg_lower = message.lower()
 
-    # Match exact or semantic topic keywords
-    for item in KNOWLEDGE_BASE:
-        for kw in item["keywords"]:
-            if re.search(rf"\b{re.escape(kw)}\b", msg_lower):
-                return item["reply"], item["suggestions"]
-
-    # If applicant context is provided, generate personalized guidance
-    if context:
-        c_score = context.get("credit_score", 700)
-        income = context.get("annual_income", 500000)
-        loan = context.get("loan_amount", 1000000)
-        tenure = context.get("loan_tenure", 5)
-        emp = context.get("employment_type", "Private")
-
-        dti_ratio = round((loan / max(income, 1)), 2)
-        reply = (
-            f"### 📋 Profile-Based Loan Analysis\n\n"
-            f"Based on your profile details:\n"
-            f"- **Credit Score**: {c_score} ({'Good' if c_score >= 700 else 'Fair / Needs Improvement'})\n"
-            f"- **Annual Income**: ₹{income:,}\n"
-            f"- **Requested Loan**: ₹{loan:,} (Loan-to-Income Multiple: {dti_ratio}x)\n"
-            f"- **Tenure**: {tenure} years | **Employment**: {emp}\n\n"
-            f"#### Key Observations:\n"
-            f"1. **Approval Likelihood**: {'Favorable due to sound credit profile' if c_score >= 700 and dti_ratio <= 4 else 'May require stronger co-applicant or adjusted tenure'}.\n"
-            f"2. **Recommendation**: Keep existing debt commitments low and verify all income documents."
-        )
-        suggestions = [
-            "How can I improve my CIBIL score?",
-            "What are the required documents for my profile?",
-            "How does EMI calculation work for this loan?"
-        ]
-        return reply, suggestions
-
-    # Contextual, respectful fallback that addresses the specific subject asked
-    reply = (
-        f"### 💡 Financial Insights on \"{message.strip()}\"\n\n"
-        f"Regarding **{message.strip()}**:\n\n"
-        "In modern banking and personal finance, decisions revolve around four core pillars:\n"
-        "1. **Creditworthiness (CIBIL Score)**: Lenders evaluate past repayment reliability before approving any loan or financial product.\n"
-        "2. **Cash Flow & Debt Burden**: Keeping fixed monthly debt commitments (DTI/FOIR) under **40%-50%** ensures you remain financially sound.\n"
-        "3. **Cost of Capital (Interest Rate)**: Always compare the Annual Percentage Rate (APR), processing fees, and foreclosure terms.\n"
-        "4. **Emergency Liquidity**: Maintain 3 to 6 months of expenses in an easily accessible liquid fund.\n\n"
-        "Would you like to explore a specific loan type, calculate an EMI, or learn how to optimize your credit score?"
-    )
-    suggestions = [
-        "What is a loan and how does it work?",
-        "How to boost CIBIL score to 750+?",
-        "What causes instant loan rejection?",
-    ]
-    return reply, suggestions
 
 
 def process_chat_message(
@@ -457,27 +416,19 @@ def process_chat_message(
             elif isinstance(item, dict):
                 history_list.append(item)
 
+    # Call Gemini API exclusively
     gemini_reply = _call_gemini_api(message, history_list, context)
 
-    if gemini_reply:
-        suggestions = [
-            "What documents are required for quick approval?",
-            "How does my CIBIL score affect interest rates?",
-            "How can I lower my monthly EMI burden?"
-        ]
-        return {
-            "reply": gemini_reply,
-            "suggestions": suggestions,
-            "model": "google-gemini-2.5-flash",
-            "status": "success",
-        }
-
-    # Use specialized topic fallback engine
-    reply, suggestions = _get_fallback_reply(message, context)
+    suggestions = [
+        "What documents are required for quick approval?",
+        "How does my CIBIL score affect interest rates?",
+        "How can I lower my monthly EMI burden?"
+    ]
+    
     return {
-        "reply": reply,
+        "reply": gemini_reply if gemini_reply else "### ❌ Error\n\nUnable to connect to the Gemini API. Please check your internet connection or API key.",
         "suggestions": suggestions,
-        "model": "loanwise-financial-expert",
+        "model": "google-gemini",
         "status": "success",
     }
 
