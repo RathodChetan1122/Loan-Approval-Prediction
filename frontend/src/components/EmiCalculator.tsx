@@ -72,9 +72,9 @@ export default function EmiCalculator({ onBack, onStartAssessment }: EmiCalculat
 
   const handleReset = () => {
     reset({
-      loanAmount: undefined,
-      interestRate: undefined,
-      tenure: undefined,
+      loanAmount: "" as unknown as number,
+      interestRate: "" as unknown as number,
+      tenure: "" as unknown as number,
       tenureUnit: "years",
     });
     setCalculationResult(null);
@@ -84,7 +84,12 @@ export default function EmiCalculator({ onBack, onStartAssessment }: EmiCalculat
   const setUnit = (unit: TenureUnit) => {
     setValue("tenureUnit", unit, { shouldValidate: true, shouldDirty: true });
     // If we have calculated and inputs are valid, recalculate automatically
-    if (watchedValues.loanAmount && watchedValues.interestRate !== undefined && watchedValues.tenure) {
+    if (
+      watchedValues.loanAmount &&
+      watchedValues.interestRate !== undefined &&
+      watchedValues.interestRate !== ("" as unknown as number) &&
+      watchedValues.tenure
+    ) {
       const result = calculateEmi({
         loanAmount: Number(watchedValues.loanAmount),
         interestRate: Number(watchedValues.interestRate),
@@ -155,10 +160,10 @@ export default function EmiCalculator({ onBack, onStartAssessment }: EmiCalculat
                       thousandsGroupStyle="lakh"
                       allowNegative={false}
                       isAllowed={({ value }) => value.length <= 8}
-                      value={value}
+                      value={value ?? ""}
                       onBlur={onBlur}
                       onValueChange={(values) => {
-                        onChange(values.floatValue);
+                        onChange(values.value === "" ? "" : values.floatValue);
                       }}
                     />
                   )}
@@ -195,10 +200,10 @@ export default function EmiCalculator({ onBack, onStartAssessment }: EmiCalculat
                       allowNegative={false}
                       decimalScale={2}
                       isAllowed={({ value }) => value.length <= 8}
-                      value={value}
+                      value={value ?? ""}
                       onBlur={onBlur}
                       onValueChange={(values) => {
-                        onChange(values.floatValue);
+                        onChange(values.value === "" ? "" : values.floatValue);
                       }}
                     />
                   )}
@@ -235,10 +240,10 @@ export default function EmiCalculator({ onBack, onStartAssessment }: EmiCalculat
                         allowNegative={false}
                         decimalScale={0}
                         isAllowed={({ value }) => value.length <= 8}
-                        value={value}
+                        value={value ?? ""}
                         onBlur={onBlur}
                         onValueChange={(values) => {
-                          onChange(values.floatValue);
+                          onChange(values.value === "" ? "" : values.floatValue);
                         }}
                       />
                     )}
