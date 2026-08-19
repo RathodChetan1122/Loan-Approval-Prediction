@@ -326,10 +326,10 @@ def _call_gemini_api(message: str, history: List[dict], context: Optional[dict] 
 
     # Supported fast model endpoints
     models_to_try = [
-        "gemini-3.5-flash",
-        "gemini-3.6-flash",
-        "gemini-flash-latest",
-        "gemini-omni-flash-preview"
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-1.5-pro"
     ]
 
     # Inject Knowledge Base into System Instruction
@@ -400,6 +400,53 @@ def _call_gemini_api(message: str, history: List[dict], context: Optional[dict] 
 
 
 
+def _call_groq_api(message: str, history: List[dict], context: Optional[dict] = None) -> Optional[str]:
+    """
+    Queries Groq LLM via official REST API.
+    """
+    api_key = os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        return None
+
+    full_system = SYSTEM_INSTRUCTION + "\n\nPre-defined Knowledge Base:\n"
+    for kb in KNOWLEDGE_BASE:
+        full_system += f"- {kb['reply']}\n"
+
+    if context:
+        full_system += f"\n\nApplicant Financial Context:\n{json.dumps(context, indent=2)}"
+
+    messages = [{"role": "system", "content": full_system}]
+    for item in history[-6:]:
+        role = "user" if item.get("role") == "user" else "assistant"
+        messages.append({"role": role, "content": item.get("content", "")})
+    
+    messages.append({"role": "user", "content": message})
+
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": messages,
+        "temperature": 0.4,
+        "max_completion_tokens": 1024,
+    }
+
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    try:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=30) as response:
+            if response.status == 200:
+                resp_data = json.loads(response.read().decode("utf-8"))
+                choices = resp_data.get("choices", [])
+                if choices:
+                    return choices[0].get("message", {}).get("content", "").strip()
+    except Exception as e:
+        print(f"Groq API Error: {e}")
+    return None
+
 def process_chat_message(
     message: str,
     history: Optional[List[Any]] = None,
@@ -407,7 +454,7 @@ def process_chat_message(
 ) -> dict:
     """
     Main entry point for handling AI Loan Assistant chat queries.
-    Tries Google Gemini first, falls back gracefully to expert financial engine.
+    Tries Groq first (if configured), then Google Gemini, falls back gracefully to expert financial engine.
     """
     history_list = []
     if history:
@@ -433,17 +480,28 @@ def process_chat_message(
                     "status": "success",
                 }
 
-    # Call Gemini API exclusively
-    gemini_reply = _call_gemini_api(message, history_list, context)
 
     suggestions = [
         "What documents are required for quick approval?",
         "How does my CIBIL score affect interest rates?",
         "How can I lower my monthly EMI burden?"
     ]
+
+    # Try Groq API if configured
+    groq_reply = _call_groq_api(message, history_list, context)
+    if groq_reply:
+        return {
+            "reply": groq_reply,
+            "suggestions": suggestions,
+            "model": "groq-llama-3",
+            "status": "success",
+        }
+
+    # Call Gemini API exclusively
+    gemini_reply = _call_gemini_api(message, history_list, context)
     
     return {
-        "reply": gemini_reply if gemini_reply else "### ❌ Error\n\nUnable to connect to the Gemini API. Please check your internet connection or API key.",
+        "reply": gemini_reply if gemini_reply else "### ❌ Error\n\nUnable to connect to the LLM API. Please check your internet connection or configure a valid GEMINI_API_KEY or GROQ_API_KEY in your environment.",
         "suggestions": suggestions,
         "model": "google-gemini",
         "status": "success",
