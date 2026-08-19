@@ -480,6 +480,7 @@ def process_chat_message(
                     "status": "success",
                 }
 
+
     suggestions = [
         "What documents are required for quick approval?",
         "How does my CIBIL score affect interest rates?",
