@@ -1,8 +1,7 @@
 import os
 import json
 from typing import Any, List, Optional
-import urllib.request
-import urllib.error
+import httpx
 import re
 
 SYSTEM_INSTRUCTION = """You are "LoanWise AI", an expert Loan & Financial Assistant specializing in:
@@ -369,27 +368,24 @@ def _call_gemini_api(message: str, history: List[dict], context: Optional[dict] 
             "maxOutputTokens": 1024,
         },
         "tools": [
-            {"google_search": {}}
+            {"googleSearch": {}}
         ]
     }
 
     for model_name in models_to_try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
         try:
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(payload).encode("utf-8"),
-                headers={"Content-Type": "application/json"},
-                method="POST"
-            )
-            with urllib.request.urlopen(req, timeout=30) as response:
-                if response.status == 200:
-                    resp_data = json.loads(response.read().decode("utf-8"))
+            with httpx.Client(timeout=30.0) as client:
+                response = client.post(url, json=payload)
+                if response.status_code == 200:
+                    resp_data = response.json()
                     candidates = resp_data.get("candidates", [])
                     if candidates:
                         parts = candidates[0].get("content", {}).get("parts", [])
                         if parts:
                             return parts[0].get("text", "").strip()
+                else:
+                    print(f"Gemini API HTTP Error {response.status_code} for model {model_name}: {response.text}")
         except Exception as e:
             print(f"Gemini API Error for model {model_name}: {e}")
             continue
